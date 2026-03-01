@@ -1,0 +1,1356 @@
+{
+  "jizhiyinbi": {
+    "c0": "jizhiyinbi",
+    "unicode": "机制银币",
+    "childs": {
+      "difangshengzao": {
+        "c1": "difangshengzao",
+        "unicode": "地方省造",
+        "childs": {
+          "sichuanshengzao": {
+            "c2": "sichuanshengzao",
+            "unicode": "四川省造",
+            "childs": {
+              "junzhengfu": {
+                "c3": "junzhengfu",
+                "unicode": "军政府",
+                "childs": {
+                  "yiyuan": {
+                    "c4": "yiyuan",
+                    "unicode": "壹圆",
+                    "childs": {
+                      "putong": {
+                        "c5": "putong",
+                        "unicode": "普通",
+                        "childs": {}
+                      }
+                    }
+                  },
+                  "wujiao": {
+                    "c4": "wujiao",
+                    "unicode": "五角",
+                    "childs": {
+                      "putong": {
+                        "c5": "putong",
+                        "unicode": "普通",
+                        "childs": {}
+                      }
+                    }
+                  }
+                }
+              },
+              "guangxudixiang": {
+                "c3": "guangxudixiang",
+                "unicode": "光绪帝像",
+                "childs": {
+                  "lubi": {
+                    "c4": "lubi",
+                    "unicode": "卢比",
+                    "childs": {
+                      "yiqi": {
+                        "c5": "yiqi",
+                        "unicode": "一期",
+                        "childs": {}
+                      },
+                      "youlinghenghua": {
+                        "c5": "youlinghenghua",
+                        "unicode": "有领横花",
+                        "childs": {}
+                      }
+                    }
+                  }
+                }
+              },
+              "guangxuyuanbao": {
+                "c3": "guangxuyuanbao",
+                "unicode": "光绪元宝",
+                "childs": {
+                  "sanqianliufen": {
+                    "c4": "sanqianliufen",
+                    "unicode": "三钱六分",
+                    "childs": {
+                      "yinbi": {
+                        "c5": "yinbi",
+                        "unicode": "银币",
+                        "childs": {}
+                      }
+                    }
+                  },
+                  "qiqianerfen": {
+                    "c4": "qiqianerfen",
+                    "unicode": "七钱二分",
+                    "childs": {
+                      "datoulong": {
+                        "c5": "datoulong",
+                        "unicode": "大头龙",
+                        "childs": {}
+                      },
+                      "sijiaolong": {
+                        "c5": "sijiaolong",
+                        "unicode": "四角龙",
+                        "childs": {}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "hubeishengzao": {
+            "c2": "hubeishengzao",
+            "unicode": "湖北省造",
+            "childs": {
+              "guangxuyuanbao": {
+                "c3": "guangxuyuanbao",
+                "unicode": "光绪元宝",
+                "childs": {
+                  "qiqianerfen": {
+                    "c4": "qiqianerfen",
+                    "unicode": "七钱二分",
+                    "childs": {
+                      "putong": {
+                        "c5": "putong",
+                        "unicode": "普通",
+                        "childs": {}
+                      }
+                    }
+                  },
+                  "sanqianliufen": {
+                    "c4": "sanqianliufen",
+                    "unicode": "三钱六分",
+                    "childs": {}
+                  }
+                }
+              },
+              "shuanglong": {
+                "c3": "shuanglong",
+                "unicode": "双龙",
+                "childs": {
+                  "yiliang": {
+                    "c4": "yiliang",
+                    "unicode": "一两",
+                    "childs": {
+                      "xiaozi": {
+                        "c5": "xiaozi",
+                        "unicode": "小字",
+                        "childs": {}
+                      }
+                    }
+                  }
+                }
+              },
+              "xuantongyuanbao": {
+                "c3": "xuantongyuanbao",
+                "unicode": "宣统元宝",
+                "childs": {
+                  "qiqianerfen": {
+                    "c4": "qiqianerfen",
+                    "unicode": "七钱二分",
+                    "childs": {
+                      "putong": {
+                        "c5": "putong",
+                        "unicode": "普通",
+                        "childs": {}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "guizhoushengzao": {
+            "c2": "guizhoushengzao",
+            "unicode": "贵州省造",
+            "childs": {
+              "minguo17nian": {
+                "c3": "minguo17nian",
+                "unicode": "民国17年",
+                "childs": {
+                  "yiyuan": {
+                    "c4": "yiyuan",
+                    "unicode": "壹圆",
+                    "childs": {
+                      "qiche": {
+                        "c5": "qiche",
+                        "unicode": "汽车",
+                        "childs": {}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "yunnanshengzao": {
+            "c2": "yunnanshengzao",
+            "unicode": "云南省造",
+            "childs": {
+              "guangxuyuanbao": {
+                "c3": "guangxuyuanbao",
+                "unicode": "光绪元宝",
+                "childs": {
+                  "qiqianerfen": {
+                    "c4": "qiqianerfen",
+                    "unicode": "七钱二分",
+                    "childs": {
+                      "laolong": {
+                        "c5": "laolong",
+                        "unicode": "老龙",
+                        "childs": {}
+                      },
+                      "kunlong": {
+                        "c5": "kunlong",
+                        "unicode": "困龙",
+                        "childs": {}
+                      }
+                    }
+                  },
+                  "sanqianliufen": {
+                    "c4": "sanqianliufen",
+                    "unicode": "三钱六分",
+                    "childs": {
+                      "kunlong": {
+                        "c5": "kunlong",
+                        "unicode": "困龙",
+                        "childs": {}
+                      }
+                    }
+                  }
+                }
+              },
+              "fuzi": {
+                "c3": "fuzi",
+                "unicode": "富字",
+                "childs": {
+                  "banliang": {
+                    "c4": "banliang",
+                    "unicode": "半两",
+                    "childs": {}
+                  },
+                  "yiliang": {
+                    "c4": "yiliang",
+                    "unicode": "一两",
+                    "childs": {}
+                  }
+                }
+              },
+              "xiaolutou": {
+                "c3": "xiaolutou",
+                "unicode": "小鹿头",
+                "childs": {
+                  "yiliang": {
+                    "c4": "yiliang",
+                    "unicode": "一两",
+                    "childs": {}
+                  }
+                }
+              }
+            }
+          },
+          "dongsanshengzao": {
+            "c2": "dongsanshengzao",
+            "unicode": "东三省造",
+            "childs": {
+              "guangxuyuanbao": {
+                "c3": "guangxuyuanbao",
+                "unicode": "光绪元宝",
+                "childs": {
+                  "qiqianerfen": {
+                    "c4": "qiqianerfen",
+                    "unicode": "七钱二分",
+                    "childs": {}
+                  }
+                }
+              }
+            }
+          },
+          "jilinshengzao": {
+            "c2": "jilinshengzao",
+            "unicode": "吉林省造",
+            "childs": {
+              "wushen": {
+                "c3": "wushen",
+                "unicode": "戊申",
+                "childs": {
+                  "qiqianerfen": {
+                    "c4": "qiqianerfen",
+                    "unicode": "七钱二分",
+                    "childs": {
+                      "zhongxinmanwen": {
+                        "c5": "zhongxinmanwen",
+                        "unicode": "中心满文",
+                        "childs": {}
+                      }
+                    }
+                  }
+                }
+              },
+              "yisi": {
+                "c3": "yisi",
+                "unicode": "乙巳",
+                "childs": {
+                  "qiqianerfen": {
+                    "c4": "qiqianerfen",
+                    "unicode": "七钱二分",
+                    "childs": {}
+                  }
+                }
+              },
+              "guimao": {
+                "c3": "guimao",
+                "unicode": "癸卯",
+                "childs": {
+                  "qiqianerfen": {
+                    "c4": "qiqianerfen",
+                    "unicode": "七钱二分",
+                    "childs": {}
+                  }
+                }
+              },
+              "renyin": {
+                "c3": "renyin",
+                "unicode": "壬寅",
+                "childs": {
+                  "qiqianerfen": {
+                    "c4": "qiqianerfen",
+                    "unicode": "七钱二分",
+                    "childs": {}
+                  }
+                }
+              },
+              "xinchou": {
+                "c3": "xinchou",
+                "unicode": "辛丑",
+                "childs": {
+                  "qiqianerfen": {
+                    "c4": "qiqianerfen",
+                    "unicode": "七钱二分",
+                    "childs": {}
+                  }
+                }
+              },
+              "gengzi": {
+                "c3": "gengzi",
+                "unicode": "庚子",
+                "childs": {
+                  "qiqianerfen": {
+                    "c4": "qiqianerfen",
+                    "unicode": "七钱二分",
+                    "childs": {
+                      "taiji": {
+                        "c5": "taiji",
+                        "unicode": "太极",
+                        "childs": {}
+                      }
+                    }
+                  }
+                }
+              },
+              "jihai": {
+                "c3": "jihai",
+                "unicode": "己亥",
+                "childs": {
+                  "qiqianerfen": {
+                    "c4": "qiqianerfen",
+                    "unicode": "七钱二分",
+                    "childs": {}
+                  }
+                }
+              },
+              "wujinianerbao": {
+                "c3": "wujinianerbao",
+                "unicode": "无纪年尔宝",
+                "childs": {
+                  "qiqianerfen": {
+                    "c4": "qiqianerfen",
+                    "unicode": "七钱二分",
+                    "childs": {
+                      "shizihua": {
+                        "c5": "shizihua",
+                        "unicode": "十字花",
+                        "childs": {}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "jiangnanshengzao": {
+            "c2": "jiangnanshengzao",
+            "unicode": "江南省造",
+            "childs": {
+              "jiachen": {
+                "c3": "jiachen",
+                "unicode": "甲辰",
+                "childs": {
+                  "qiqianerfen": {
+                    "c4": "qiqianerfen",
+                    "unicode": "七钱二分",
+                    "childs": {
+                      "putong": {
+                        "c5": "putong",
+                        "unicode": "普通",
+                        "childs": {}
+                      },
+                      "zimiandian": {
+                        "c5": "zimiandian",
+                        "unicode": "字面点",
+                        "childs": {}
+                      },
+                      "TH": {
+                        "c5": "TH",
+                        "unicode": "TH",
+                        "childs": {}
+                      },
+                      "sidianhua": {
+                        "c5": "sidianhua",
+                        "unicode": "四点花",
+                        "childs": {}
+                      },
+                      "7qiandian": {
+                        "c5": "7qiandian",
+                        "unicode": "7前点",
+                        "childs": {}
+                      }
+                    }
+                  }
+                }
+              },
+              "xinchou": {
+                "c3": "xinchou",
+                "unicode": "辛丑",
+                "childs": {
+                  "qiqianerfen": {
+                    "c4": "qiqianerfen",
+                    "unicode": "七钱二分",
+                    "childs": {
+                      "cuzi": {
+                        "c5": "cuzi",
+                        "unicode": "粗字",
+                        "childs": {}
+                      },
+                      "xizi": {
+                        "c5": "xizi",
+                        "unicode": "细字",
+                        "childs": {}
+                      }
+                    }
+                  }
+                }
+              },
+              "gengzi": {
+                "c3": "gengzi",
+                "unicode": "庚子",
+                "childs": {
+                  "qiqianerfen": {
+                    "c4": "qiqianerfen",
+                    "unicode": "七钱二分",
+                    "childs": {
+                      "putong": {
+                        "c5": "putong",
+                        "unicode": "普通",
+                        "childs": {}
+                      }
+                    }
+                  }
+                }
+              },
+              "wuxu": {
+                "c3": "wuxu",
+                "unicode": "戊戌",
+                "childs": {
+                  "qiqianerfen": {
+                    "c4": "qiqianerfen",
+                    "unicode": "七钱二分",
+                    "childs": {
+                      "putong": {
+                        "c5": "putong",
+                        "unicode": "普通",
+                        "childs": {}
+                      },
+                      "zhenzhulong": {
+                        "c5": "zhenzhulong",
+                        "unicode": "珍珠龙",
+                        "childs": {}
+                      }
+                    }
+                  }
+                }
+              },
+              "laojiangnan": {
+                "c3": "laojiangnan",
+                "unicode": "老江南",
+                "childs": {
+                  "qiqianerfen": {
+                    "c4": "qiqianerfen",
+                    "unicode": "七钱二分",
+                    "childs": {
+                      "renzibianrisheng": {
+                        "c5": "renzibianrisheng",
+                        "unicode": "人字边日省",
+                        "childs": {}
+                      }
+                    }
+                  }
+                }
+              },
+              "yisi": {
+                "c3": "yisi",
+                "unicode": "乙巳",
+                "childs": {
+                  "qiqianerfen": {
+                    "c4": "qiqianerfen",
+                    "unicode": "七钱二分",
+                    "childs": {}
+                  }
+                }
+              },
+              "renyin": {
+                "c3": "renyin",
+                "unicode": "壬寅",
+                "childs": {
+                  "qiqianerfen": {
+                    "c4": "qiqianerfen",
+                    "unicode": "七钱二分",
+                    "childs": {
+                      "zhitouyin": {
+                        "c5": "zhitouyin",
+                        "unicode": "直头寅",
+                        "childs": {}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "fengtianshengzao": {
+            "c2": "fengtianshengzao",
+            "unicode": "奉天省造",
+            "childs": {
+              "guimao": {
+                "c3": "guimao",
+                "unicode": "癸卯",
+                "childs": {
+                  "qiqianerfen": {
+                    "c4": "qiqianerfen",
+                    "unicode": "七钱二分",
+                    "childs": {
+                      "fengbao": {
+                        "c5": "fengbao",
+                        "unicode": "奉宝",
+                        "childs": {}
+                      }
+                    }
+                  }
+                }
+              },
+              "guangxu25nian": {
+                "c3": "guangxu25nian",
+                "unicode": "光绪25年",
+                "childs": {
+                  "yiyuan": {
+                    "c4": "yiyuan",
+                    "unicode": "一圆",
+                    "childs": {
+                      "youquan": {
+                        "c5": "youquan",
+                        "unicode": "有圈",
+                        "childs": {}
+                      }
+                    }
+                  }
+                }
+              },
+              "guangxu24nian": {
+                "c3": "guangxu24nian",
+                "unicode": "光绪24年",
+                "childs": {
+                  "yiyuan": {
+                    "c4": "yiyuan",
+                    "unicode": "一圆",
+                    "childs": {
+                      "xiaozuilong": {
+                        "c5": "xiaozuilong",
+                        "unicode": "小嘴龙",
+                        "childs": {}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "beiyangzao": {
+            "c2": "beiyangzao",
+            "unicode": "北洋造",
+            "childs": {
+              "guangxu34nian": {
+                "c3": "guangxu34nian",
+                "unicode": "光绪34年",
+                "childs": {
+                  "qiqianerfen": {
+                    "c4": "qiqianerfen",
+                    "unicode": "七钱二分",
+                    "childs": {
+                      "putong": {
+                        "c5": "putong",
+                        "unicode": "普通",
+                        "childs": {}
+                      }
+                    }
+                  }
+                }
+              },
+              "guangxu33nian": {
+                "c3": "guangxu33nian",
+                "unicode": "光绪33年",
+                "childs": {
+                  "qiqianerfen": {
+                    "c4": "qiqianerfen",
+                    "unicode": "七钱二分",
+                    "childs": {
+                      "putong": {
+                        "c5": "putong",
+                        "unicode": "普通",
+                        "childs": {}
+                      }
+                    }
+                  }
+                }
+              },
+              "guangxu26nian": {
+                "c3": "guangxu26nian",
+                "unicode": "光绪26年",
+                "childs": {
+                  "qiqianerfen": {
+                    "c4": "qiqianerfen",
+                    "unicode": "七钱二分",
+                    "childs": {}
+                  }
+                }
+              },
+              "guangxu24nian": {
+                "c3": "guangxu24nian",
+                "unicode": "光绪24年",
+                "childs": {
+                  "yiyuan": {
+                    "c4": "yiyuan",
+                    "unicode": "壹圆",
+                    "childs": {}
+                  }
+                }
+              }
+            }
+          },
+          "anhuishengzao": {
+            "c2": "anhuishengzao",
+            "unicode": "安徽省造",
+            "childs": {
+              "guangxu24nian": {
+                "c3": "guangxu24nian",
+                "unicode": "光绪24年",
+                "childs": {
+                  "qiqianerfen": {
+                    "c4": "qiqianerfen",
+                    "unicode": "七钱二分",
+                    "childs": {
+                      "biansixiaoxing": {
+                        "c5": "biansixiaoxing",
+                        "unicode": "扁四小星",
+                        "childs": {}
+                      }
+                    }
+                  },
+                  "sanqianliufen": {
+                    "c4": "sanqianliufen",
+                    "unicode": "三钱六分",
+                    "childs": {}
+                  }
+                }
+              },
+              "wuxu": {
+                "c3": "wuxu",
+                "unicode": "戊戌",
+                "childs": {
+                  "qiqianerfen": {
+                    "c4": "qiqianerfen",
+                    "unicode": "七钱二分",
+                    "childs": {}
+                  }
+                }
+              },
+              "wujinian": {
+                "c3": "wujinian",
+                "unicode": "无纪年",
+                "childs": {
+                  "qiqianerfen": {
+                    "c4": "qiqianerfen",
+                    "unicode": "七钱二分",
+                    "childs": {}
+                  }
+                }
+              }
+            }
+          },
+          "hunanshengzao": {
+            "c2": "hunanshengzao",
+            "unicode": "湖南省造",
+            "childs": {
+              "changshaqianyizihao": {
+                "c3": "changshaqianyizihao",
+                "unicode": "长沙乾益字号",
+                "childs": {
+                  "qiqian": {
+                    "c4": "qiqian",
+                    "unicode": "柒钱",
+                    "childs": {}
+                  }
+                }
+              }
+            }
+          },
+          "xinjiangshengzao": {
+            "c2": "xinjiangshengzao",
+            "unicode": "新疆省造",
+            "childs": {
+              "zaobichangzhu": {
+                "c3": "zaobichangzhu",
+                "unicode": "造币厂铸",
+                "childs": {
+                  "yiyuan": {
+                    "c4": "yiyuan",
+                    "unicode": "壹圆",
+                    "childs": {
+                      "jianzu1": {
+                        "c5": "jianzu1",
+                        "unicode": "尖足1",
+                        "childs": {}
+                      }
+                    }
+                  }
+                }
+              },
+              "guangxuyinyuan": {
+                "c3": "guangxuyinyuan",
+                "unicode": "光绪银元",
+                "childs": {
+                  "wuqian": {
+                    "c4": "wuqian",
+                    "unicode": "伍钱",
+                    "childs": {
+                      "AH1321kazao": {
+                        "c5": "AH1321kazao",
+                        "unicode": "AH1321喀造",
+                        "childs": {}
+                      }
+                    }
+                  },
+                  "sanqian": {
+                    "c4": "sanqian",
+                    "unicode": "叁钱",
+                    "childs": {
+                      "AH1315kashi": {
+                        "c5": "AH1315kashi",
+                        "unicode": "AH1315喀什",
+                        "childs": {}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "guangdongshengzao": {
+            "c2": "guangdongshengzao",
+            "unicode": "广东省造",
+            "childs": {
+              "guangxuyuanbao": {
+                "c3": "guangxuyuanbao",
+                "unicode": "光绪元宝",
+                "childs": {
+                  "sanqianliufen": {
+                    "c4": "sanqianliufen",
+                    "unicode": "三钱六分",
+                    "childs": {}
+                  },
+                  "qiqianerfen": {
+                    "c4": "qiqianerfen",
+                    "unicode": "七钱二分",
+                    "childs": {
+                      "putong": {
+                        "c5": "putong",
+                        "unicode": "普通",
+                        "childs": {}
+                      },
+                      "xidun": {
+                        "c5": "xidun",
+                        "unicode": "喜敦",
+                        "childs": {}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "minguozhongyang": {
+        "c1": "minguozhongyang",
+        "unicode": "民国中央",
+        "childs": {
+          "yuanshikaixiang": {
+            "c2": "yuanshikaixiang",
+            "unicode": "袁世凯像",
+            "childs": {
+              "minguojiunian": {
+                "c3": "minguojiunian",
+                "unicode": "民国九年",
+                "childs": {
+                  "yiyuan": {
+                    "c4": "yiyuan",
+                    "unicode": "壹圆",
+                    "childs": {
+                      "jingfa": {
+                        "c5": "jingfa",
+                        "unicode": "精发",
+                        "childs": {}
+                      },
+                      "cufa": {
+                        "c5": "cufa",
+                        "unicode": "粗发",
+                        "childs": {}
+                      },
+                      "hainanban": {
+                        "c5": "hainanban",
+                        "unicode": "海南版",
+                        "childs": {}
+                      }
+                    }
+                  }
+                }
+              },
+              "minguosannian": {
+                "c3": "minguosannian",
+                "unicode": "民国三年",
+                "childs": {
+                  "yiyuan": {
+                    "c4": "yiyuan",
+                    "unicode": "壹圆",
+                    "childs": {
+                      "gansujiazi": {
+                        "c5": "gansujiazi",
+                        "unicode": "甘肃加字",
+                        "childs": {}
+                      },
+                      "zhongyangban": {
+                        "c5": "zhongyangban",
+                        "unicode": "中央版",
+                        "childs": {}
+                      },
+                      "Obansanjiaoyuan": {
+                        "c5": "Obansanjiaoyuan",
+                        "unicode": "O版三角元",
+                        "childs": {}
+                      }
+                    }
+                  }
+                }
+              },
+              "minguoshinian": {
+                "c3": "minguoshinian",
+                "unicode": "民国十年",
+                "childs": {
+                  "yiyuan": {
+                    "c4": "yiyuan",
+                    "unicode": "壹圆",
+                    "childs": {
+                      "putong": {
+                        "c5": "putong",
+                        "unicode": "普通",
+                        "childs": {}
+                      }
+                    }
+                  }
+                }
+              },
+              "minguobanian": {
+                "c3": "minguobanian",
+                "unicode": "民国八年",
+                "childs": {
+                  "yiyuan": {
+                    "c4": "yiyuan",
+                    "unicode": "壹圆",
+                    "childs": {
+                      "putong": {
+                        "c5": "putong",
+                        "unicode": "普通",
+                        "childs": {}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "sunxiangchuanyang": {
+            "c2": "sunxiangchuanyang",
+            "unicode": "孙像船洋",
+            "childs": {
+              "minguo22nian": {
+                "c3": "minguo22nian",
+                "unicode": "民国22年",
+                "childs": {
+                  "yiyuan": {
+                    "c4": "yiyuan",
+                    "unicode": "壹圆",
+                    "childs": {
+                      "putong": {
+                        "c5": "putong",
+                        "unicode": "普通",
+                        "childs": {}
+                      }
+                    }
+                  }
+                }
+              },
+              "minguo23nian": {
+                "c3": "minguo23nian",
+                "unicode": "民国23年",
+                "childs": {
+                  "yiyuan": {
+                    "c4": "yiyuan",
+                    "unicode": "壹圆",
+                    "childs": {
+                      "putong": {
+                        "c5": "putong",
+                        "unicode": "普通",
+                        "childs": {}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "sunxiangsanniao": {
+            "c2": "sunxiangsanniao",
+            "unicode": "孙像三鸟",
+            "childs": {
+              "minguo21nian": {
+                "c3": "minguo21nian",
+                "unicode": "民国21年",
+                "childs": {
+                  "yiyuan": {
+                    "c4": "yiyuan",
+                    "unicode": "壹圆",
+                    "childs": {
+                      "yinbi": {
+                        "c5": "yinbi",
+                        "unicode": "银币",
+                        "childs": {}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "sunzhongshanxiang": {
+            "c2": "sunzhongshanxiang",
+            "unicode": "孙中山像",
+            "childs": {
+              "minguo17nian": {
+                "c3": "minguo17nian",
+                "unicode": "民国17年",
+                "childs": {
+                  "yiyuan": {
+                    "c4": "yiyuan",
+                    "unicode": "壹圆",
+                    "childs": {
+                      "gansushengzao": {
+                        "c5": "gansushengzao",
+                        "unicode": "甘肃省造",
+                        "childs": {}
+                      }
+                    }
+                  }
+                }
+              },
+              "kaiguojinian": {
+                "c3": "kaiguojinian",
+                "unicode": "开国纪念",
+                "childs": {
+                  "yiyuan": {
+                    "c4": "yiyuan",
+                    "unicode": "壹圆",
+                    "childs": {
+                      "xiawuxing": {
+                        "c5": "xiawuxing",
+                        "unicode": "下五星",
+                        "childs": {}
+                      },
+                      "putong": {
+                        "c5": "putong",
+                        "unicode": "普通",
+                        "childs": {}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "longfeng": {
+            "c2": "longfeng",
+            "unicode": "龙凤",
+            "childs": {
+              "minguoshiernian": {
+                "c3": "minguoshiernian",
+                "unicode": "民国十二年",
+                "childs": {
+                  "yiyuan": {
+                    "c4": "yiyuan",
+                    "unicode": "壹圆",
+                    "childs": {
+                      "xiaoziban": {
+                        "c5": "xiaoziban",
+                        "unicode": "小字版",
+                        "childs": {}
+                      },
+                      "daziban": {
+                        "c5": "daziban",
+                        "unicode": "大字版",
+                        "childs": {}
+                      }
+                    }
+                  }
+                }
+              },
+              "minguoshiwunian": {
+                "c3": "minguoshiwunian",
+                "unicode": "民国十五年",
+                "childs": {
+                  "yijiao": {
+                    "c4": "yijiao",
+                    "unicode": "壹角",
+                    "childs": {}
+                  }
+                }
+              }
+            }
+          },
+          "liyuanhongxiang": {
+            "c2": "liyuanhongxiang",
+            "unicode": "黎元洪像",
+            "childs": {
+              "kaiguojinian": {
+                "c3": "kaiguojinian",
+                "unicode": "开国纪念",
+                "childs": {
+                  "yiyuan": {
+                    "c4": "yiyuan",
+                    "unicode": "壹圆",
+                    "childs": {
+                      "wumao": {
+                        "c5": "wumao",
+                        "unicode": "无帽",
+                        "childs": {}
+                      },
+                      "daimao": {
+                        "c5": "daimao",
+                        "unicode": "戴帽",
+                        "childs": {}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "sunxiangsanfan": {
+            "c2": "sunxiangsanfan",
+            "unicode": "孙像三帆",
+            "childs": {
+              "minguo18nian": {
+                "c3": "minguo18nian",
+                "unicode": "民国18年",
+                "childs": {
+                  "yiyuan": {
+                    "c4": "yiyuan",
+                    "unicode": "壹圆",
+                    "childs": {
+                      "meiguo": {
+                        "c5": "meiguo",
+                        "unicode": "美国",
+                        "childs": {}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "jinianbi": {
+        "c1": "jinianbi",
+        "unicode": "纪念币",
+        "childs": {
+          "duanqiruixiang": {
+            "c2": "duanqiruixiang",
+            "unicode": "段祺瑞像",
+            "childs": {
+              "hepingzhizheng": {
+                "c3": "hepingzhizheng",
+                "unicode": "和平执政",
+                "childs": {
+                  "jinianbi": {
+                    "c4": "jinianbi",
+                    "unicode": "纪念币",
+                    "childs": {}
+                  }
+                }
+              }
+            }
+          },
+          "caokunxiang": {
+            "c2": "caokunxiang",
+            "unicode": "曹锟像",
+            "childs": {
+              "xianfachengli": {
+                "c3": "xianfachengli",
+                "unicode": "宪法成立",
+                "childs": {
+                  "jinian": {
+                    "c4": "jinian",
+                    "unicode": "纪念",
+                    "childs": {
+                      "rongzhuang": {
+                        "c5": "rongzhuang",
+                        "unicode": "戎装",
+                        "childs": {}
+                      },
+                      "wenzhuang": {
+                        "c5": "wenzhuang",
+                        "unicode": "文装",
+                        "childs": {}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "hunanshengxian": {
+            "c2": "hunanshengxian",
+            "unicode": "湖南省宪",
+            "childs": {
+              "chenglijinian": {
+                "c3": "chenglijinian",
+                "unicode": "成立纪念",
+                "childs": {
+                  "yiyuan": {
+                    "c4": "yiyuan",
+                    "unicode": "壹圆",
+                    "childs": {
+                      "putong": {
+                        "c5": "putong",
+                        "unicode": "普通",
+                        "childs": {}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "xushichangxiang": {
+            "c2": "xushichangxiang",
+            "unicode": "徐世昌像",
+            "childs": {
+              "minguoshinian": {
+                "c3": "minguoshinian",
+                "unicode": "民国十年",
+                "childs": {
+                  "renshoutongdeng": {
+                    "c4": "renshoutongdeng",
+                    "unicode": "仁寿同登",
+                    "childs": {
+                      "jinianbi": {
+                        "c5": "jinianbi",
+                        "unicode": "纪念币",
+                        "childs": {}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "yuanshikaixiang": {
+            "c2": "yuanshikaixiang",
+            "unicode": "袁世凯像",
+            "childs": {
+              "hongxianjiyuan": {
+                "c3": "hongxianjiyuan",
+                "unicode": "洪宪纪元",
+                "childs": {
+                  "feilongjinian": {
+                    "c4": "feilongjinian",
+                    "unicode": "飞龙纪念",
+                    "childs": {
+                      "putong": {
+                        "c5": "putong",
+                        "unicode": "普通",
+                        "childs": {}
+                      }
+                    }
+                  }
+                }
+              },
+              "gonghejinian": {
+                "c3": "gonghejinian",
+                "unicode": "共和纪念",
+                "childs": {
+                  "yiyuan": {
+                    "c4": "yiyuan",
+                    "unicode": "壹圆",
+                    "childs": {
+                      "putong": {
+                        "c5": "putong",
+                        "unicode": "普通",
+                        "childs": {}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "tangjiyaoxiang": {
+            "c2": "tangjiyaoxiang",
+            "unicode": "唐继尧像",
+            "childs": {
+              "yonghugonghe": {
+                "c3": "yonghugonghe",
+                "unicode": "拥护共和",
+                "childs": {
+                  "sanqianliufen": {
+                    "c4": "sanqianliufen",
+                    "unicode": "三钱六分",
+                    "childs": {
+                      "zhengxiang": {
+                        "c5": "zhengxiang",
+                        "unicode": "正像",
+                        "childs": {}
+                      },
+                      "cexiang": {
+                        "c5": "cexiang",
+                        "unicode": "侧像",
+                        "childs": {}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "qingdaizhongyang": {
+        "c1": "qingdaizhongyang",
+        "unicode": "清代中央",
+        "childs": {
+          "guangxunianzao": {
+            "c2": "guangxunianzao",
+            "unicode": "光绪年造",
+            "childs": {
+              "dingweidaqingyinbi": {
+                "c3": "dingweidaqingyinbi",
+                "unicode": "丁未大清银币",
+                "childs": {
+                  "yiyuan": {
+                    "c4": "yiyuan",
+                    "unicode": "壹圆",
+                    "childs": {}
+                  }
+                }
+              }
+            }
+          },
+          "xuantongsannian": {
+            "c2": "xuantongsannian",
+            "unicode": "宣统三年",
+            "childs": {
+              "daqingyinbi": {
+                "c3": "daqingyinbi",
+                "unicode": "大清银币",
+                "childs": {
+                  "yiyuan": {
+                    "c4": "yiyuan",
+                    "unicode": "壹圆",
+                    "childs": {
+                      "putong": {
+                        "c5": "putong",
+                        "unicode": "普通",
+                        "childs": {}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "yizaobi": {
+        "c1": "yizaobi",
+        "unicode": "臆造币",
+        "childs": {
+          "qita": {
+            "c2": "qita",
+            "unicode": "其他",
+            "childs": {}
+          }
+        }
+      },
+      "zhonghuasuweiai": {
+        "c1": "zhonghuasuweiai",
+        "unicode": "中华苏维埃",
+        "childs": {
+          "suweiai": {
+            "c2": "suweiai",
+            "unicode": "苏维埃",
+            "childs": {
+              "1932": {
+                "c3": "1932",
+                "unicode": "1932",
+                "childs": {
+                  "erjiao": {
+                    "c4": "erjiao",
+                    "unicode": "贰角",
+                    "childs": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "jinianzhang": {
+        "c1": "jinianzhang",
+        "unicode": "纪念章",
+        "childs": {
+          "sunzhongshanxiang": {
+            "c2": "sunzhongshanxiang",
+            "unicode": "孙中山像",
+            "childs": {}
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,45 @@
+# 虚拟环境
+.venv/
+.venv1/
+
+# 前端依赖
+frontend/node_modules/
+
+# 环境变量文件
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# 数据库文件
+backend/instance/*.db
+
+# 日志文件
+*.log
+
+# 编辑器生成的文件
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 操作系统文件
+.DS_Store
+Thumbs.db
+
+# 构建产物
+dist/
+build/
+
+# 缓存文件
+__pycache__/
+*.pyc
+
+# 模型文件
+*.pt
+*.onnx
+
+# 向量存储
+vectors_stores/

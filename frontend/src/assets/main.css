@@ -1,0 +1,62 @@
+:root {
+  --el-color-primary: #8b3a3a;
+  --el-color-primary-light-9: #fbf7f4;
+
+  --primary-color: #8b3a3a;
+  --primary-hover: #a64b4b;
+  --accent-color: #c5a065;
+  --bg-color: #f7f5f0;
+  --card-bg: #ffffff;
+  --text-main: #2c2c2c;
+  --text-secondary: #666666;
+  --border-color: #e0dcd0;
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  margin: 0;
+  font-family: "Noto Serif SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  color: var(--text-main);
+  background-color: var(--bg-color);
+  background-image: url("data:image/svg+xml,%3Csvg width='52' height='52' viewBox='0 0 52 52' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23d4c5b0' fill-opacity='0.12'%3E%3Cpath d='M26 4l4 8h8l-6 6 2 10-8-5-8 5 2-10-6-6h8z'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+a {
+  color: inherit;
+}
+
+.page-shell {
+  width: min(1180px, calc(100% - 32px));
+  margin: 0 auto;
+}
+
+.coin-panel {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+
+.fade-slide-enter-active,
+.fade-slide-leave-active {
+  transition: opacity 0.22s ease, transform 0.22s ease;
+}
+
+.fade-slide-enter-from {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+.fade-slide-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
+}

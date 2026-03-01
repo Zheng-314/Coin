@@ -1,0 +1,305 @@
+<template>
+  <div class="auth-page">
+    <div class="auth-card coin-panel">
+      <section class="auth-visual">
+        <div class="visual-content">
+          <p class="visual-kicker">加入社区</p>
+          <h2>开启你的收藏之旅</h2>
+          <p>创建账号后可保存收藏、同步问答记录并持续积累鉴定经验。</p>
+          <ul>
+            <li>AI 辅助鉴定</li>
+            <li>个人藏品档案</li>
+            <li>海量图谱检索</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="auth-form-panel">
+        <h1>创建新账号</h1>
+        <p class="subtitle">只需几步即可使用平台核心能力</p>
+
+        <p v-if="message" :class="{ success: isSuccess, 'alert-error': !isSuccess }">{{ message }}</p>
+
+        <form @submit.prevent="handleRegister">
+          <div class="form-group">
+            <label for="username">用户名</label>
+            <input id="username" v-model.trim="username" type="text" placeholder="请输入用户名" required />
+          </div>
+          <div class="form-group">
+            <label for="password">设置密码</label>
+            <input id="password" v-model="password" type="password" placeholder="至少 6 位" required />
+          </div>
+          <div class="form-group">
+            <label for="confirmPassword">确认密码</label>
+            <input id="confirmPassword" v-model="confirmPassword" type="password" placeholder="请再次输入密码" required />
+          </div>
+          <label class="agree-row">
+            <input v-model="agreed" type="checkbox" />
+            <span>我已阅读并同意服务条款与隐私说明</span>
+          </label>
+          <button type="submit" class="submit-btn" :disabled="isLoading">
+            {{ isLoading ? '注册中...' : '立即注册' }}
+          </button>
+        </form>
+
+        <div class="switch-tip">
+          <span>已经有账号了？</span>
+          <button type="button" class="switch-btn" @click="goLogin">直接登录</button>
+        </div>
+      </section>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref } from 'vue';
+import axios from 'axios';
+import { useRouter } from 'vue-router';
+import { apiUrl } from '@/config/api';
+
+const username = ref('');
+const password = ref('');
+const confirmPassword = ref('');
+const agreed = ref(false);
+const message = ref('');
+const isSuccess = ref(false);
+const isLoading = ref(false);
+const router = useRouter();
+
+const handleRegister = async () => {
+  isLoading.value = true;
+  message.value = '';
+  isSuccess.value = false;
+  if (password.value !== confirmPassword.value) {
+    message.value = '两次输入的密码不一致，请检查。';
+    isLoading.value = false;
+    return;
+  }
+  if (password.value.length < 6) {
+    message.value = '密码长度至少为 6 位。';
+    isLoading.value = false;
+    return;
+  }
+  if (!agreed.value) {
+    message.value = '请先勾选同意条款后再注册。';
+    isLoading.value = false;
+    return;
+  }
+
+  try {
+    await axios.post(apiUrl('/api/users/register'), {
+      username: username.value,
+      password: password.value
+    });
+    message.value = '注册成功！即将跳转到登录页面...';
+    isSuccess.value = true;
+    setTimeout(() => {
+      router.push('/login'); // 2秒后跳转到登录页
+    }, 2000);
+  } catch (error) {
+    message.value = error?.response?.data?.message || '注册失败，请检查后端服务是否已启动。';
+    isSuccess.value = false;
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+const goLogin = () => {
+  router.push('/login');
+};
+</script>
+
+<style scoped>
+.auth-page {
+  min-height: 78vh;
+  display: grid;
+  place-items: center;
+  padding: 18px 0;
+}
+
+.auth-card {
+  width: min(960px, 100%);
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  overflow: hidden;
+}
+
+.auth-visual {
+  position: relative;
+  background: linear-gradient(135deg, #3a2c2c 0%, #171717 100%);
+  color: #fff;
+  padding: 34px 28px;
+  display: flex;
+  align-items: flex-end;
+}
+
+.auth-visual::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.06'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zM36 4V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+.visual-content {
+  position: relative;
+  z-index: 1;
+}
+
+.visual-kicker {
+  margin: 0;
+  font-size: 0.85rem;
+  opacity: 0.75;
+}
+
+.visual-content h2 {
+  margin: 8px 0 0;
+  font-size: 1.7rem;
+}
+
+.visual-content p {
+  margin: 10px 0 0;
+  opacity: 0.85;
+  line-height: 1.7;
+}
+
+.visual-content ul {
+  margin: 12px 0 0;
+  padding-left: 18px;
+  opacity: 0.9;
+}
+
+.visual-content li {
+  margin: 4px 0;
+}
+
+.auth-form-panel {
+  background: #fff;
+  padding: 30px 30px 24px;
+}
+
+h1 {
+  margin: 0;
+  color: var(--text-main);
+  font-size: 1.7rem;
+}
+
+.subtitle {
+  margin: 8px 0 14px;
+  color: var(--text-secondary);
+  font-size: 0.93rem;
+}
+
+.form-group {
+  margin-bottom: 12px;
+}
+
+label {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--text-main);
+  font-size: 0.9rem;
+}
+
+input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  outline: none;
+  font-size: 0.95rem;
+}
+
+input:focus {
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 3px rgba(197, 160, 101, 0.15);
+}
+
+.agree-row {
+  margin: 2px 0 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-size: 0.86rem;
+}
+
+.agree-row input {
+  width: 14px;
+  height: 14px;
+}
+
+.submit-btn {
+  width: 100%;
+  margin-top: 6px;
+  border: none;
+  background: var(--primary-color);
+  color: #fff;
+  padding: 10px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: background 0.2s;
+}
+
+.submit-btn:hover {
+  background: var(--primary-hover);
+}
+
+.submit-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.success {
+  margin: 0 0 12px;
+  border-left: 4px solid #1f7a49;
+  background: #effaf2;
+  color: #1f7a49;
+  padding: 10px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+.alert-error {
+  margin: 0 0 12px;
+  border-left: 4px solid #c0392b;
+  background: #fff4f2;
+  color: #c0392b;
+  padding: 10px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+.switch-tip {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.switch-btn {
+  border: none;
+  background: transparent;
+  color: var(--primary-color);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.switch-btn:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 900px) {
+  .auth-card {
+    grid-template-columns: 1fr;
+  }
+  .auth-visual {
+    min-height: 150px;
+    align-items: center;
+  }
+}
+</style>
