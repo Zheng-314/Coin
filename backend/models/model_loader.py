@@ -118,6 +118,15 @@ def ensure_onnx_session_ready():
     logger.debug(f"ensure_onnx_session_ready 返回: {onnx_session is not None}")
     return onnx_session is not None, predict_model_errors
 
-# 立即初始化模型
-# 这样当模块被导入时，模型就会被加载
-load_models()
+# 模型延迟加载：不在模块导入时自动加载
+# 由 app_new.py 在应用启动后显式调用 load_models() 或通过 ensure_onnx_session_ready() 按需加载
+_initialized = False
+
+
+def init_models():
+    """应用启动时调用，加载所有模型"""
+    global _initialized
+    if not _initialized:
+        load_models()
+        _initialized = True
+    return onnx_session is not None, predict_model_errors

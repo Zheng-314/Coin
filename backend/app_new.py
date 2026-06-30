@@ -102,6 +102,10 @@ def index():
 # 注册所有蓝图（在模块级调用，确保 flask run / gunicorn 等部署方式也能注册路由）
 register_blueprints()
 
+# 初始化模型（应用启动时加载，不阻塞导入）
+from models.model_loader import init_models
+init_models()
+
 if __name__ == '__main__':
     logger.info("=" * 60)
     logger.info("钱币智能鉴定系统 - 后端服务")

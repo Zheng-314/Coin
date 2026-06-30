@@ -206,10 +206,15 @@ const resetFilters = () => {
   startNewSearch();
 };
 
+let scrollTimer = null;
 const handleScroll = () => {
-  if (window.innerHeight + window.scrollY >= document.documentElement.offsetHeight - 100) {
-    fetchArtifacts();
-  }
+  if (scrollTimer) return;
+  scrollTimer = setTimeout(() => {
+    scrollTimer = null;
+    if (window.innerHeight + window.scrollY >= document.documentElement.offsetHeight - 100) {
+      fetchArtifacts();
+    }
+  }, 200);
 };
 
 onMounted(() => {

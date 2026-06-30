@@ -46,3 +46,10 @@ vectors_stores/
 
 # 训练图片数据（体积过大，不上传 Git）
 data/images/
+
+# 前端 Vite 缓存
+frontend/.vite/
+
+# 测试和日志
+backend/benchmark_result.json
+backend_startup.log

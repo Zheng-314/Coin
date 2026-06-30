@@ -269,76 +269,30 @@ def predict():
         processed2 = run_optional_yolo_pipeline(image2_data)
         logger.info("预处理完成")
 
+        from services.inference_service import run_multi_candidate_inference, extract_top_k
+
         # 多候选推理：处理后图像和原图，正常和交换顺序
-        candidate_pairs = [
-            ('processed', 'normal', processed1, processed2),
-            ('processed', 'swapped', processed2, processed1),
-            ('raw', 'normal', image1_data, image2_data),
-            ('raw', 'swapped', image2_data, image1_data),
-        ]
+        best_probs, best_conf, best_meta = run_multi_candidate_inference(
+            images_a=[processed1, image1_data],
+            images_b=[processed2, image2_data],
+            onnx_infer_fn=run_onnx_pair_inference,
+        )
 
-        best = None
-        for i, (pipeline_name, order_name, img_a, img_b) in enumerate(candidate_pairs):
-            logger.info(f"尝试候选 {i+1}/4: pipeline={pipeline_name}, order={order_name}")
-            probs = run_onnx_pair_inference(img_a, img_b)
-            if probs is not None:
-                logger.debug(f"  probs shape: {probs.shape}")
-                # 确保 probs 是一维数组
-                if len(probs.shape) == 2:
-                    probs = probs[0]  # 取第一个批次
-                logger.debug(f"  probs after flatten: {probs.shape}")
-
-                top1_idx = np.argmax(probs)
-                top1_idx = int(top1_idx.item()) if hasattr(top1_idx, 'item') else int(top1_idx)
-                top1_conf = float(probs[top1_idx].item()) if hasattr(probs[top1_idx], 'item') else float(probs[top1_idx])
-                logger.info(f"  推理成功: top1_idx={top1_idx}, top1_conf={top1_conf:.4f}")
-                if best is None or top1_conf > best['top1_confidence']:
-                    best = {
-                        'pipeline': pipeline_name,
-                        'order': order_name,
-                        'probs': probs,
-                        'top1_confidence': top1_conf
-                    }
-                    logger.debug("  更新最佳结果")
-            else:
-                logger.warning("  推理失败")
-
-        if best is None:
+        if best_probs is None:
             return jsonify({'error': '推理失败，请检查模型配置'}), 500
 
-        predictions = best['probs']
-        logger.debug(f"predictions shape: {predictions.shape}")
+        logger.info(f"最优候选: pipeline={best_meta['pipeline']}, order={best_meta['order']}, conf={best_conf:.4f}")
 
-        # 确保 predictions 是一维数组
-        if len(predictions.shape) > 1:
-            predictions = predictions.flatten()
-
-        logger.debug(f"predictions shape after flatten: {predictions.shape}")
-        logger.debug(f"predictions: {predictions}")
-
-        # 获取排序索引并取前3个
-        sorted_indices = np.argsort(predictions)[::-1][:3]
-        logger.debug(f"Top 3 indices: {sorted_indices}")
-
-        # 获取类别名称列表
-        result_predictions = []
-        for i, idx in enumerate(sorted_indices):
-            idx_int = int(idx.item()) if hasattr(idx, 'item') else int(idx)
-            conf = float(predictions[idx_int].item()) if hasattr(predictions[idx_int], 'item') else float(predictions[idx_int])
-            name = CLASS_NAMES[idx_int] if idx_int < len(CLASS_NAMES) else f'类别 #{idx_int}'
-            result_predictions.append({
-                'class': idx_int,
-                'confidence': conf,
-                'name': name
-            })
+        # Top-3 预测
+        result_predictions = extract_top_k(best_probs, CLASS_NAMES, k=3)
 
         # 展示图与最终入模策略一致
-        if best['pipeline'] == 'processed':
+        if best_meta.get('pipeline') == 'processed':
             display1, display2 = processed1, processed2
         else:
             display1, display2 = image1_data, image2_data
 
-        if best['order'] == 'swapped':
+        if best_meta.get('order') == 'swapped':
             display1, display2 = display2, display1
 
         base64_image1 = encode_image_to_base64(display1)

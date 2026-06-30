@@ -85,34 +85,18 @@ def _identify_coin_from_images(image_files, question=""):
     processed2 = run_optional_yolo_pipeline(images[1])
 
     from routes.predict import CLASS_NAMES
-    candidate_pairs = [
-        ('processed', 'normal', processed1, processed2),
-        ('processed', 'swapped', processed2, processed1),
-        ('raw', 'normal', images[0], images[1]),
-        ('raw', 'swapped', images[1], images[0]),
-    ]
+    from services.inference_service import run_multi_candidate_inference, extract_top_k
 
-    best = None
-    for _, _, img_a, img_b in candidate_pairs:
-        probs = run_onnx_pair_inference(img_a, img_b)
-        if probs is not None:
-            if len(probs.shape) == 2:
-                probs = probs[0]
-            top1_idx = int(np.argmax(probs))
-            top1_conf = float(probs[top1_idx])
-            if best is None or top1_conf > best['top1_confidence']:
-                best = {'probs': probs, 'top1_idx': top1_idx, 'top1_confidence': top1_conf}
+    best_probs, best_conf, _ = run_multi_candidate_inference(
+        images_a=[processed1, images[0]],
+        images_b=[processed2, images[1]],
+        onnx_infer_fn=run_onnx_pair_inference,
+    )
 
-    if best is None:
+    if best_probs is None:
         return None, "鉴定失败"
 
-    sorted_indices = np.argsort(best['probs'])[::-1][:3]
-    results = []
-    for idx in sorted_indices:
-        idx_int = int(idx)
-        conf = float(best['probs'][idx_int])
-        name = CLASS_NAMES[idx_int] if idx_int < len(CLASS_NAMES) else f'类别#{idx_int}'
-        results.append({'name': name, 'confidence': round(conf * 100, 1)})
+    results = extract_top_k(best_probs, CLASS_NAMES, k=3)
 
     lines = ["【图片鉴定结果（YOLO+ONNX）】"]
     for i, r in enumerate(results, 1):

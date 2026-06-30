@@ -8,6 +8,9 @@ import AboutView from '../views/AboutView.vue'
 import LandingView from '../views/LandingView.vue'
 import ValuationView from '../views/ValuationView.vue'
 
+// 需要登录的路由
+const protectedRoutes = ['/profile', '/tools', '/valuation']
+
 const routes = [
   {
     path: '/',
@@ -104,6 +107,16 @@ const routes = [
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes
+})
+
+router.beforeEach((to, _from, next) => {
+  if (protectedRoutes.some(p => to.path.startsWith(p))) {
+    const token = localStorage.getItem('token')
+    if (!token) {
+      return next({ name: 'login', query: { redirect: to.fullPath } })
+    }
+  }
+  next()
 })
 
 export default router

@@ -36,6 +36,11 @@
       <p>加载知识图谱中...</p>
     </div>
 
+    <div v-if="graphError && !loading" class="error-overlay">
+      <p>⚠️ 知识图谱加载失败</p>
+      <button @click="loadGraphData" class="retry-btn">重新加载</button>
+    </div>
+
     <div v-if="selectedNode" class="node-detail">
       <div class="detail-header">
         <span class="detail-type" :style="{ backgroundColor: selectedNode.color }">{{ selectedNode.type }}</span>
@@ -72,6 +77,7 @@ const network = ref(null);
 const physicsEnabled = ref(true);
 const graphContainer = ref(null);
 const loading = ref(true);
+const graphError = ref(false);
 const searchQuery = ref('');
 const selectedNode = ref(null);
 const nodeCount = ref(0);
@@ -120,6 +126,7 @@ const resolveNodeType = (rawType) => {
 };
 
 const loadGraphData = async () => {
+  graphError.value = false;
   try {
     const response = await http.get('/api/kg/graph?limit=320');
     const graphData = response.data || { nodes: [], edges: [] };
@@ -216,6 +223,7 @@ const loadGraphData = async () => {
     loading.value = false;
   } catch (error) {
     console.error('加载图谱失败:', error);
+    graphError.value = true;
     loading.value = false;
   }
 };

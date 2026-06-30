@@ -253,29 +253,20 @@ def batch_predict():
             proc1 = run_optional_yolo_pipeline(img1)
             proc2 = run_optional_yolo_pipeline(img2)
 
-            # 4候选推理
-            best = None
-            for a, b in [(proc1, proc2), (proc2, proc1), (img1, img2), (img2, img1)]:
-                probs = run_onnx_pair_inference(a, b)
-                if probs is not None:
-                    if len(probs.shape) == 2:
-                        probs = probs[0]
-                    top1 = int(np.argmax(probs))
-                    conf = float(probs[top1])
-                    if best is None or conf > best['conf']:
-                        best = {'probs': probs, 'top1': top1, 'conf': conf}
+            from services.inference_service import run_multi_candidate_inference, extract_top_k
 
-            if best is None:
+            # 4候选推理
+            best_probs, best_conf, _ = run_multi_candidate_inference(
+                images_a=[proc1, img1],
+                images_b=[proc2, img2],
+                onnx_infer_fn=run_onnx_pair_inference,
+            )
+
+            if best_probs is None:
                 results.append({'index': int(idx), 'error': '推理失败'})
                 continue
 
-            sorted_idx = np.argsort(best['probs'])[::-1][:3]
-            top3 = []
-            for si in sorted_idx:
-                si_int = int(si)
-                c = float(best['probs'][si_int])
-                n = CLASS_NAMES[si_int] if si_int < len(CLASS_NAMES) else f'#{si_int}'
-                top3.append({'name': n, 'confidence': round(c * 100, 1)})
+            top3 = extract_top_k(best_probs, CLASS_NAMES, k=3)
 
             results.append({
                 'index': int(idx),
