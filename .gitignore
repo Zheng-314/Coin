@@ -53,3 +53,8 @@ frontend/.vite/
 # 测试和日志
 backend/benchmark_result.json
 backend_startup.log
+
+# 废弃虚拟环境
+venv_py312/
+venv_py313/
+.venv1/
