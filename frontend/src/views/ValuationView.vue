@@ -47,11 +47,10 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { useRoute } from 'vue-router';
-import axios from 'axios';
+import http from '@/config/http';
 import MarkdownIt from 'markdown-it';
-import { apiUrl } from '@/config/api';
 
-const md = new MarkdownIt();
+const md = new MarkdownIt({ html: false });
 const route = useRoute();
 
 const coinName = ref(String(route.query.coinName || ''));
@@ -70,7 +69,7 @@ const submitValuation = async () => {
   reportMarkdown.value = '';
 
   try {
-    const response = await axios.post(apiUrl('/api/valuation'), {
+    const response = await http.post('/api/valuation', {
       coinName: coinName.value,
       coinGrade: coinGrade.value
     });

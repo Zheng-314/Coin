@@ -3,7 +3,7 @@
     <div class="chat-container coin-panel">
       <div class="chat-head">
         <h2>钱币知识问答</h2>
-        <p>可切换本地/全局/联网搜索，回答将自动保存到个人历史。</p>
+        <p>支持文字提问或上传图片鉴定，可切换本地/全局/联网搜索。</p>
         <div class="capability-row">
           <span class="capability-tag" :class="{ ok: capabilities.global.available }">
             全局: {{ capabilities.global.available ? '可用' : '降级' }}
@@ -14,6 +14,9 @@
           <span class="capability-tag" :class="{ ok: capabilities.web.available }">
             联网: {{ capabilities.web.available ? '可用' : '不可用' }}
           </span>
+          <span class="capability-tag ok" v-if="capabilities.multimodal?.available">
+            📷 多模态
+          </span>
         </div>
       </div>
 
@@ -21,13 +24,24 @@
         <div v-for="message in messages" :key="message.id" :class="['message', message.type]">
           <img :src="message.type === 'user' ? userAvatar : botAvatar" class="avatar" />
           <div class="bubble">
-            <div v-if="message.type === 'bot'" v-html="md.render(message.text)" />
-            <div v-else>{{ message.text }}</div>
+            <!-- 用户消息：显示图片+文字 -->
+            <div v-if="message.type === 'user'">
+              <div v-if="message.images && message.images.length" class="user-images">
+                <img v-for="(img, idx) in message.images" :key="idx" :src="img" class="user-thumb" />
+              </div>
+              <div>{{ message.text }}</div>
+            </div>
+            <!-- Bot消息：Markdown渲染 -->
+            <div v-else v-html="md.render(message.text)" />
+            <!-- 来源 -->
             <div v-if="message.type === 'bot' && message.sources && message.sources.length" class="source-box">
               <p>参考来源</p>
               <ul>
                 <li v-for="(s, i) in message.sources" :key="`${i}-${s.pid || s.name || 'src'}`">
-                  <a v-if="s.pid" :href="`/artifact/${s.pid}`" target="_blank" rel="noopener noreferrer">
+                  <span v-if="s.type === 'identification'" class="id-result">
+                    🔍 {{ s.results?.map(r => `${r.name}(${r.confidence}%)`).join('、') }}
+                  </span>
+                  <a v-else-if="s.pid" :href="`/artifact/${s.pid}`" target="_blank" rel="noopener noreferrer">
                     {{ s.title || `文物 #${s.pid}` }}
                   </a>
                   <span v-else>{{ s.name || s.title || '系统来源' }}</span>
@@ -37,8 +51,36 @@
           </div>
         </div>
       </div>
+
+      <!-- 上传错误提示 -->
+      <div v-if="uploadError" class="upload-error">{{ uploadError }} <button @click="uploadError = null" style="background:none;border:none;color:inherit;cursor:pointer;font-size:1rem;">✕</button></div>
+
+      <!-- 图片预览区 -->
+      <div v-if="imagePreviews.length" class="image-preview-bar">
+        <div v-for="(img, idx) in imagePreviews" :key="idx" class="preview-item">
+          <img :src="img" />
+          <button class="remove-btn" @click="removeImage(idx)">×</button>
+        </div>
+        <span class="preview-hint">已选 {{ imagePreviews.length }} 张图片</span>
+      </div>
+
       <div class="input-container">
-        <input v-model="question" placeholder="请输入你的问题，如：袁大头九年精发有什么特征？" @keyup.enter="askQuestion" />
+        <button class="attach-btn" @click="triggerFileInput" title="上传图片">
+          📷
+        </button>
+        <input
+          ref="fileInput"
+          type="file"
+          accept="image/*"
+          multiple
+          style="display: none"
+          @change="handleFileSelect"
+        />
+        <input
+          v-model="question"
+          placeholder="输入问题或上传图片鉴定，如：这个值多少钱？"
+          @keyup.enter="askQuestion"
+        />
         <el-select v-model="searchType" placeholder="搜索类型" class="type-select">
           <el-option
             v-for="item in searchOptions"
@@ -48,8 +90,8 @@
             :disabled="item.disabled"
           ></el-option>
         </el-select>
-        <el-button class="send-btn" @click="askQuestion" :disabled="loading || !question">
-          {{ loading ? '发送中...' : '发送' }}
+        <el-button class="send-btn" @click="askQuestion" :disabled="loading || (!question.trim() && !selectedImages.length)">
+          {{ loading ? '回答中...' : '发送' }}
         </el-button>
       </div>
     </div>
@@ -58,7 +100,7 @@
 
 <script setup>
 import { ref, onMounted, nextTick, watch, computed } from 'vue';
-import axios from 'axios';
+import http from '@/config/http';
 import MarkdownIt from 'markdown-it';
 import { useAuthStore } from '@/stores/auth';
 import { useRouter } from 'vue-router'
@@ -66,19 +108,24 @@ import userAvatar from '@/assets/image/people.jpg';
 import botAvatar from '@/assets/image/robot.png';
 import { apiUrl } from '@/config/api';
 
-const md = new MarkdownIt();
+const md = new MarkdownIt({ html: false });
 const authStore = useAuthStore();
 const router = useRouter();
 
 const question = ref('');
 const messages = ref([]);
 const loading = ref(false);
-const searchType = ref('global'); // 默认搜索类型
+const searchType = ref('global');
 const messagesContainer = ref(null);
+const fileInput = ref(null);
+const selectedImages = ref([]);
+const imagePreviews = ref([]);
+const uploadError = ref(null);
 const capabilities = ref({
   global: { available: true, reason: '' },
   local: { available: true, reason: '' },
-  web: { available: false, reason: '' }
+  web: { available: false, reason: '' },
+  multimodal: { available: true }
 });
 
 const searchOptions = computed(() => [
@@ -99,16 +146,10 @@ const searchOptions = computed(() => [
   }
 ]);
 
-const authHeaders = () => {
-  const token = localStorage.getItem('token');
-  return token ? { Authorization: token } : {};
-};
-
 const loadCapabilities = async () => {
   try {
-    const response = await axios.get(apiUrl('/api/ask/capabilities'));
+    const response = await http.get('/api/ask/capabilities');
     capabilities.value = response.data || capabilities.value;
-
     if (searchType.value === 'web' && !capabilities.value.web.available) {
       searchType.value = capabilities.value.global.available ? 'global' : 'local';
     }
@@ -118,81 +159,97 @@ const loadCapabilities = async () => {
 };
 
 onMounted(async () => {
-  // 加载问答能力状态
   await loadCapabilities();
 
-  // 加载历史聊天记录（仅当用户登录时）
   if (authStore.isAuthenticated) {
     try {
-      const response = await axios.get(apiUrl('/api/chat/history'), { headers: authHeaders() });
+      const response = await http.get('/api/chat/history');
       if (response.data && response.data.length > 0) {
-        // 为从服务器加载的消息添加唯一ID
         messages.value = response.data.map(msg => ({
           ...msg,
           id: generateId(),
-          // 确保消息类型正确
           type: msg.type || 'bot'
         }));
       } else {
-        // 如果没有历史记录，显示欢迎语
         messages.value.push({
           id: generateId(),
           type: 'bot',
-          text: '我是一个基于OPEN-AI并专注于中国近代银币的Agent，有有关中国近代银币的问题都可以问我~'
+          text: '你好！我是钱币知识问答助手，支持：\n\n- 💬 **文字提问**：输入钱币相关问题\n- 📷 **图片鉴定**：上传正反面照片识别钱币\n- 🔍 **智能搜索**：本地/全局/联网三种模式\n\n有什么可以帮您？'
         });
       }
     } catch (error) {
       console.error("加载聊天记录失败:", error);
-      // 即使加载失败，也显示欢迎语
       messages.value.push({
         id: generateId(),
         type: 'bot',
-        text: '我是一个专注于中国近代银币的Agent，有什么可以帮您？'
+        text: '你好！我是钱币知识问答助手，有什么可以帮您？'
       });
     } finally {
       loading.value = false;
     }
   } else {
-    // 未登录时显示欢迎语
     messages.value.push({
       id: generateId(),
       type: 'bot',
-      text: '我是一个专注于中国近代银币的Agent，登录后可以保存聊天记录。'
+      text: '你好！我是钱币知识问答助手，登录后可以保存聊天记录。'
     });
     loading.value = false;
   }
 });
 
-// 生成唯一ID
 const generateId = () => {
   return Date.now().toString(36) + Math.random().toString(36).substr(2);
 };
 
-  // 保存单条消息到数据库
 const saveMessageToDb = async (message) => {
-  if (!authStore.isAuthenticated) return; // 未登录则不保存
+  if (!authStore.isAuthenticated) return;
   try {
-    await axios.post(
-      apiUrl('/api/chat/history'),
-      { 
-        type: message.type, 
-        text: message.text,
-        sources: message.sources // 保存sources字段
-      },
-      { headers: authHeaders() }
-    );
+    await http.post('/api/chat/history', {
+      type: message.type,
+      text: message.text,
+      sources: message.sources
+    });
   } catch (error) {
     console.error("保存消息到数据库失败:", error);
   }
 };
 
+// 图片处理
+const triggerFileInput = () => {
+  fileInput.value?.click();
+};
+
+const handleFileSelect = (event) => {
+  const files = Array.from(event.target.files);
+  for (const file of files) {
+    if (file.size > 10 * 1024 * 1024) {
+      uploadError.value = `${file.name} 超过10MB限制`;
+      continue;
+    }
+    if (!file.type.startsWith('image/')) continue;
+
+    selectedImages.value.push(file);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      imagePreviews.value.push(e.target.result);
+    };
+    reader.readAsDataURL(file);
+  }
+  // 清空input
+  if (fileInput.value) fileInput.value.value = '';
+};
+
+const removeImage = (idx) => {
+  selectedImages.value.splice(idx, 1);
+  imagePreviews.value.splice(idx, 1);
+};
+
 const askQuestion = async () => {
-  if (!question.value.trim() || loading.value) return;
+  if ((!question.value.trim() && !selectedImages.value.length) || loading.value) return;
+
   if (searchType.value === 'web' && !capabilities.value.web.available) {
-    // 自动切换到可用的搜索类型
     const availableType = capabilities.value.global.available ? 'global' : 'local';
     searchType.value = availableType;
-    
     const errorMessage = {
       id: generateId(),
       type: 'bot',
@@ -203,76 +260,111 @@ const askQuestion = async () => {
     return;
   }
 
-  const userQuestionText = question.value.trim();
-
-  // [!code ++] 在发送请求前，准备好当前的历史记录
-  // 这份历史记录不包含用户当前输入的问题
+  const userQuestionText = question.value.trim() || '请帮我看看这是什么钱币。';
+  const hasImages = selectedImages.value.length > 0;
   const historyForApi = JSON.parse(JSON.stringify(messages.value));
 
-  // 1. 将用户的问题添加到UI
+  // 添加用户消息（带图片预览）
   const userMessage = {
     id: generateId(),
     type: 'user',
-    text: userQuestionText
+    text: userQuestionText,
+    images: hasImages ? [...imagePreviews.value] : []
   };
   messages.value.push(userMessage);
-
-  // 2. 将用户的问题保存到数据库
   await saveMessageToDb(userMessage);
 
   loading.value = true;
-  question.value = ''; // 清空输入框
+  question.value = '';
+  const currentImages = [...selectedImages.value];
+  imagePreviews.value = [];
+  selectedImages.value = [];
+
+  // 插入空bot消息
+  const botMessage = { id: generateId(), type: 'bot', text: '', sources: [] };
+  messages.value.push(botMessage);
+  const botIndex = messages.value.length - 1;
 
   try {
-    // 3. 发送请求到后端，包含问题、搜索类型和历史记录
-    // 处理历史记录格式，只传递文本内容
     const formattedHistory = historyForApi.map(msg => msg.text);
-    const response = await axios.post(apiUrl('/api/ask'), {
-      question: userQuestionText,
-      searchType: searchType.value,
-      history: formattedHistory
-    });
+    let response;
 
-    const answer = response.data.answer || '服务器没有返回信息。';
-    const sources = Array.isArray(response.data.sources) ? response.data.sources : [];
+    if (hasImages) {
+      // 多模态：multipart/form-data
+      const formData = new FormData();
+      formData.append('question', userQuestionText);
+      formData.append('searchType', searchType.value);
+      formData.append('history', JSON.stringify(formattedHistory));
+      formData.append('stream', 'true');
+      for (const img of currentImages) {
+        formData.append('images', img);
+      }
 
-    // 4. 将机器人的回答添加到UI
-    const botMessage = {
-      id: generateId(),
-      type: 'bot',
-      text: answer,
-      sources
-    };
-    messages.value.push(botMessage);
+      const token = localStorage.getItem('token');
+      const reqHeaders = token ? { 'Authorization': `Bearer ${token}` } : {};
+      response = await fetch(apiUrl('/api/ask'), {
+        method: 'POST',
+        headers: reqHeaders,
+        body: formData
+      });
+    } else {
+      // 纯文字：JSON
+      const token = localStorage.getItem('token');
+      const reqHeaders = { 'Content-Type': 'application/json' };
+      if (token) reqHeaders['Authorization'] = `Bearer ${token}`;
+      response = await fetch(apiUrl('/api/ask'), {
+        method: 'POST',
+        headers: reqHeaders,
+        body: JSON.stringify({
+          question: userQuestionText,
+          searchType: searchType.value,
+          history: formattedHistory,
+          stream: true
+        })
+      });
+    }
 
-    // 5. 将机器人的回答保存到数据库
-    await saveMessageToDb(botMessage);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop();
+
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        try {
+          const payload = JSON.parse(line.slice(6));
+          if (payload.delta !== undefined) {
+            messages.value[botIndex].text += payload.delta;
+          } else if (payload.done) {
+            messages.value[botIndex].sources = payload.sources || [];
+          } else if (payload.error) {
+            messages.value[botIndex].text = payload.answer || '发生错误，请重试。';
+          }
+        } catch (_) { /* 忽略解析错误 */ }
+      }
+    }
+
+    await saveMessageToDb(messages.value[botIndex]);
   } catch (error) {
     console.error('Error:', error);
-    let errorMessageText = '与服务器通信时出错，请稍后重试。';
-    
-    if (error.response) {
-      // 服务器返回错误
-      errorMessageText = error.response.data?.answer || errorMessageText;
-    } else if (error.request) {
-      // 请求已发送但没有收到响应
-      errorMessageText = '服务器无响应，请检查网络连接。';
-    }
-    
-    const errorMessage = {
-      id: generateId(),
-      type: 'bot',
-      text: errorMessageText
-    };
-    messages.value.push(errorMessage);
-    await saveMessageToDb(errorMessage); // 错误信息也保存
+    let errorText = '与服务器通信时出错，请稍后重试。';
+    if (error.request) errorText = '服务器无响应，请检查网络连接。';
+    messages.value[botIndex].text = errorText;
+    await saveMessageToDb(messages.value[botIndex]);
   } finally {
     loading.value = false;
   }
 };
 
-// 监听消息数组的变化，自动滚动到底部
+// 自动滚动
 watch(messages, async () => {
   await nextTick();
   const container = messagesContainer.value;
@@ -405,6 +497,80 @@ watch(messages, async () => {
   padding-left: 20px;
 }
 
+/* 用户图片 */
+.user-images {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.user-thumb {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+/* 图片预览栏 */
+.image-preview-bar {
+  display: flex;
+  gap: 8px;
+  padding: 8px 16px;
+  background: #fff;
+  border-top: 1px solid var(--border-color);
+  align-items: center;
+  overflow-x: auto;
+}
+
+.preview-item {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.preview-item img {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+}
+
+.remove-btn {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #e74c3c;
+  color: white;
+  border: none;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.preview-hint {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.upload-error {
+  background: #fdecea;
+  color: #b33939;
+  padding: 8px 16px;
+  font-size: 0.85rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
 .source-box {
   margin-top: 10px;
   padding-top: 8px;
@@ -436,6 +602,10 @@ watch(messages, async () => {
   text-decoration: underline;
 }
 
+.id-result {
+  color: #2f7a50;
+  font-weight: 500;
+}
 
 .input-container {
   display: flex;
@@ -444,6 +614,26 @@ watch(messages, async () => {
   border-top: 1px solid var(--border-color);
   background-color: #fff;
   align-items: center;
+}
+
+.attach-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--border-color);
+  background: #fff;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.attach-btn:hover {
+  border-color: var(--primary-color);
+  background: #fdf5f5;
 }
 
 input {

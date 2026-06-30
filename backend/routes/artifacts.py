@@ -3,11 +3,14 @@
 # ==============================================================================
 import os
 import json
+import logging
 from pathlib import Path
 from flask import Blueprint, request, jsonify
-from utils.database import get_item_db_connection
+from utils.database import item_db
 from utils.helpers import to_artifact_view
 from config import DATA_DIR
+
+logger = logging.getLogger('routes.artifacts')
 
 artifacts_bp = Blueprint('artifacts', __name__)
 
@@ -62,110 +65,80 @@ def get_artifacts():
     year_start = request.args.get('year_start', type=int)
     year_end = request.args.get('year_end', type=int)
 
-    print(f"DEBUG: 请求参数 - page: {page}, limit: {limit}, q: {search_query}, c0: {category_c0}")
-    print(f"DEBUG: 筛选参数 - dynasty: {dynasty}, province: {province}, grade: {grade}")
-    print(f"DEBUG: 年份参数 - year_start: {year_start}, year_end: {year_end}")
-
-    query = "SELECT url, pid, text, c0 FROM item"
-    params = []
     conditions = []
+    params = []
 
     if search_query:
         conditions.append("text LIKE ?")
         params.append(f'%{search_query}%')
-
     if category_c0:
         conditions.append("c0 = ?")
         params.append(category_c0)
+    # JSON字段在text列中，用LIKE做近似过滤，减少Python层处理量
+    if dynasty:
+        conditions.append("text LIKE ?")
+        params.append(f'%{dynasty}%')
+    if province:
+        conditions.append("text LIKE ?")
+        params.append(f'%{province}%')
+    if grade:
+        conditions.append("text LIKE ?")
+        params.append(f'%{grade}%')
 
-    if conditions:
-        query += " WHERE " + " AND ".join(conditions)
+    where_clause = (" WHERE " + " AND ".join(conditions)) if conditions else ""
+    offset = (page - 1) * limit
 
-    print(f"DEBUG: 执行SQL: {query}")
-    print(f"DEBUG: SQL参数: {params}")
+    with item_db() as conn:
+        # 先获取总数用于分页
+        count_sql = f"SELECT COUNT(*) FROM item{where_clause}"
+        total = conn.execute(count_sql, tuple(params)).fetchone()[0]
 
-    conn = None
-    try:
-        conn = get_item_db_connection()
-        items = conn.execute(query, tuple(params)).fetchall()
-        print(f"DEBUG: 数据库查询结果: {len(items)} 条记录")
-    finally:
-        if conn:
-            conn.close()
+        # 带分页的查询
+        data_sql = f"SELECT url, pid, text, c0 FROM item{where_clause} LIMIT ? OFFSET ?"
+        items = conn.execute(data_sql, tuple(params) + (limit, offset)).fetchall()
 
-    # 后处理筛选
-    filtered = []
-    exception_count = 0
-    dynasty_filter_count = 0
-    province_filter_count = 0
-    grade_filter_count = 0
-    year_filter_count = 0
-
+    result = []
     for item in items:
         try:
             record = to_artifact_view(item)
-            # 转换图片URL
             record['url'] = convert_image_url(record.get('url'))
-        except Exception as e:
-            exception_count += 1
+            # 精确过滤（SQL LIKE可能有误匹配）
+            if dynasty and record.get('dynasty') != dynasty:
+                continue
+            if province and record.get('province') != province:
+                continue
+            if grade and record.get('grade') != grade:
+                continue
+            if year_start is not None and (record.get('year') is None or record['year'] < year_start):
+                continue
+            if year_end is not None and (record.get('year') is None or record['year'] > year_end):
+                continue
+            result.append(record)
+        except Exception:
             continue
 
-        # 应用筛选条件
-        if dynasty and record['dynasty'] != dynasty:
-            dynasty_filter_count += 1
-            continue
-        if province and record['province'] != province:
-            province_filter_count += 1
-            continue
-        if grade and record['grade'] != grade:
-            grade_filter_count += 1
-            continue
-        if year_start is not None and (record['year'] is None or record['year'] < year_start):
-            year_filter_count += 1
-            continue
-        if year_end is not None and (record['year'] is None or record['year'] > year_end):
-            year_filter_count += 1
-            continue
-        filtered.append(record)
-
-    print(f"DEBUG: 后处理筛选结果 - 总记录: {len(items)}, 成功处理: {len(filtered) + exception_count + dynasty_filter_count + province_filter_count + grade_filter_count + year_filter_count}")
-    print(f"DEBUG: 筛选详情 - 异常: {exception_count}, 朝代筛选: {dynasty_filter_count}, 省份筛选: {province_filter_count}, 等级筛选: {grade_filter_count}, 年份筛选: {year_filter_count}")
-    print(f"DEBUG: 最终筛选结果: {len(filtered)} 条记录")
-
-    offset = (page - 1) * limit
-    paged = filtered[offset: offset + limit]
-    print(f"DEBUG: 分页结果 - 偏移: {offset}, 限制: {limit}, 返回: {len(paged)} 条记录")
-    
-    return jsonify(paged)
+    return jsonify(result)
 
 @artifacts_bp.route('/api/artifacts/filters', methods=['GET'])
 def get_artifact_filters():
     """获取筛选条件选项"""
-    conn = None
-    try:
-        conn = get_item_db_connection()
-        items = conn.execute("SELECT url, pid, text, c0 FROM item").fetchall()
-    finally:
-        if conn:
-            conn.close()
+    with item_db() as conn:
+        # 只取需要的字段，减少数据传输
+        items = conn.execute("SELECT text FROM item").fetchall()
 
-    dynasties = set()
-    provinces = set()
-    grades = set()
-    years = set()
-
+    dynasties, provinces, grades, years = set(), set(), set(), set()
     for item in items:
         try:
-            record = to_artifact_view(item)
+            record = json.loads(item['text'])
         except Exception:
             continue
-        if record['dynasty']:
+        if record.get('dynasty'):
             dynasties.add(record['dynasty'])
-        if record['province']:
+        if record.get('province'):
             provinces.add(record['province'])
-        if record['grade']:
+        if record.get('grade'):
             grades.add(record['grade'])
-        if record['year'] is not None:
+        if record.get('year') is not None:
             years.add(record['year'])
 
     sorted_years = sorted(years)
@@ -185,9 +158,8 @@ def get_artifact_by_id():
     if not pid:
         return jsonify({"message": "需要提供文物ID"}), 400
 
-    conn = get_item_db_connection()
-    item = conn.execute("SELECT * FROM item WHERE pid = ?", (pid,)).fetchone()
-    conn.close()
+    with item_db() as conn:
+        item = conn.execute("SELECT * FROM item WHERE pid = ?", (pid,)).fetchone()
 
     if not item:
         return jsonify({"message": "文物未找到"}), 404
@@ -205,48 +177,83 @@ def get_artifact_by_id():
         # 可以选择删除原始的text字段，或者保留它
         # del item_dict['text']
     except Exception as e:
-        print(f"解析text字段失败: {e}")
+        logger.error(f"解析text字段失败: {e}")
 
     return jsonify(item_dict)
 
 @artifacts_bp.route('/api/kg/graph', methods=['GET'])
 def get_kg_graph():
-    """获取知识图谱数据"""
-    conn = None
+    """获取知识图谱数据，优先从Neo4j读取，降级到SQLite"""
+    limit = request.args.get('limit', 320, type=int)
+
+    # 尝试从Neo4j读取真实图谱数据
     try:
-        conn = get_item_db_connection()
-        nodes = conn.execute("SELECT pid, text FROM item LIMIT 100").fetchall()
-    finally:
-        if conn:
-            conn.close()
+        from config import NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD
+        from neo4j import GraphDatabase
+        driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
+        with driver.session() as session:
+            result = session.run(
+                """
+                MATCH (n)-[r]->(m)
+                RETURN n, r, m
+                LIMIT $limit
+                """,
+                limit=limit
+            )
+            nodes_map = {}
+            edges = []
+            for record in result:
+                n, rel, m = record['n'], record['r'], record['m']
+                for node in (n, m):
+                    nid = str(node.element_id)
+                    if nid not in nodes_map:
+                        props = dict(node)
+                        label = props.get('name') or props.get('title') or props.get('id') or nid
+                        node_type = list(node.labels)[0] if node.labels else 'Entity'
+                        nodes_map[nid] = {
+                            'id': nid,
+                            'label': str(label)[:40],
+                            'type': node_type,
+                            'description': props.get('description', '')
+                        }
+                edges.append({
+                    'from': str(n.element_id),
+                    'to': str(m.element_id),
+                    'label': rel.type
+                })
+        driver.close()
+        return jsonify({'nodes': list(nodes_map.values()), 'edges': edges})
+    except Exception as e:
+        logger.error(f"Neo4j图谱读取失败，降级到SQLite: {e}")
+
+    # 降级：从SQLite构建简单图谱
+    with item_db() as conn:
+        rows = conn.execute("SELECT pid, text FROM item LIMIT ?", (min(limit, 100),)).fetchall()
 
     formatted_nodes = []
     edges = []
-
-    for i, node in enumerate(nodes):
+    for i, node in enumerate(rows):
         try:
             text_data = json.loads(node['text'])
             title = text_data.get('title', f'Item {node["pid"]}')
-            category = text_data.get('category', 'unknown')
+            dynasty = text_data.get('dynasty', '')
+            node_type = 'COIN'
         except Exception:
             title = f'Item {node["pid"]}'
-            category = 'unknown'
+            dynasty = ''
+            node_type = 'COIN'
 
         formatted_nodes.append({
             'id': node['pid'],
-            'label': title[:30],  # 截断标题
-            'category': category
+            'label': title[:40],
+            'type': node_type,
+            'description': dynasty
         })
-
-        # 简单的边生成（实际应用中应从关系中获取）
         if i > 0:
             edges.append({
-                'source': nodes[i-1]['pid'],
-                'target': node['pid'],
-                'label': 'related'
+                'from': rows[i - 1]['pid'],
+                'to': node['pid'],
+                'label': 'RELATED_TO'
             })
 
-    return jsonify({
-        'nodes': formatted_nodes,
-        'edges': edges
-    })
+    return jsonify({'nodes': formatted_nodes, 'edges': edges})

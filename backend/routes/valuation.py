@@ -1,9 +1,11 @@
 # ==============================================================================
 # 钱币估值路由
 # ==============================================================================
-import traceback
+import logging
 from flask import Blueprint, request, jsonify
 from services import global_search_engine
+
+logger = logging.getLogger('routes.valuation')
 
 valuation_bp = Blueprint('valuation', __name__)
 
@@ -22,7 +24,7 @@ def get_valuation():
     if not coin_name or not coin_grade:
         return jsonify({'error': '钱币名称和品相是必填项。'}), 400
 
-    print(f"开始为 '{coin_name}' (品相: {coin_grade}) 进行估值...")
+    logger.info(f"开始为 '{coin_name}' (品相: {coin_grade}) 进行估值...")
 
     try:
         # 全局搜索 - 获取历史背景和设计特点
@@ -45,7 +47,7 @@ def get_valuation():
             try:
                 global_answer = execute_global_search(build_question_with_history(global_prompt, []), global_search_engine)
             except Exception as e:
-                print(f"全局搜索失败: {e}")
+                logger.error(f"全局搜索失败: {e}")
                 global_answer = f"知识库搜索失败: {str(e)}"
 
         # 执行联网搜索
@@ -53,7 +55,7 @@ def get_valuation():
         try:
             web_answer = execute_web_search(build_question_with_history(web_prompt, []))
         except Exception as e:
-            print(f"联网搜索失败: {e}")
+            logger.error(f"联网搜索失败: {e}")
             web_answer = f"联网搜索失败: {str(e)}"
 
         # 组合结果
@@ -83,5 +85,5 @@ def get_valuation():
         })
 
     except Exception as e:
-        traceback.print_exc()
+        logger.error("估值生成异常", exc_info=True)
         return jsonify({'error': f'估值生成失败: {str(e)}'}), 500

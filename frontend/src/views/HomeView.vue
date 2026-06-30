@@ -55,6 +55,13 @@
       </div>
     </div>
 
+    <div v-if="error" class="error-banner">{{ error }} <button @click="error = null" style="background:none;border:none;color:inherit;cursor:pointer;font-size:1rem;">✕</button></div>
+
+    <div v-if="isLoading && artifacts.length === 0" class="loading-spinner">
+      <div class="spinner"></div>
+      <p>加载中...</p>
+    </div>
+
     <div class="artifacts-grid">
       <ArtifactCard v-for="item in artifacts" :key="item.pid" :artifact="item" />
     </div>
@@ -71,13 +78,13 @@ defineOptions({
 });
 
 import { ref, onMounted, onUnmounted } from 'vue';
-import axios from 'axios';
+import http from '@/config/http';
 import ArtifactCard from '@/components/ArtifactCard.vue';
-import { apiUrl } from '@/config/api';
 
 const artifacts = ref([]);
 const currentPage = ref(1);
 const isLoading = ref(false);
+const error = ref(null);
 const hasMore = ref(true);
 const searchQuery = ref('');
 const selectedCategory = ref('');
@@ -97,15 +104,16 @@ const filterOptions = ref({
 
 const loadCategories = async () => {
   try {
-    const response = await axios.get(apiUrl('/api/artifacts/classification'));
+    const response = await http.get('/api/artifacts/classification');
     const raw = response.data || {};
     const top = Object.values(raw).map((item) => ({
       value: item.c0 || '',
       label: item.unicode || item.c0 || '未分类'
     }));
     categories.value = [{ value: '', label: '全部' }, ...top.filter((x) => x.value)];
-  } catch (error) {
-    console.error('加载分类失败：', error);
+  } catch (e) {
+    console.error('加载分类失败：', e);
+    error.value = '加载分类失败，请稍后重试。';
     categories.value = [{ value: '', label: '全部' }];
   }
 };
@@ -115,7 +123,7 @@ const fetchArtifacts = async () => {
 
   isLoading.value = true;
   try {
-    let url = apiUrl(`/api/artifacts/searchItems?page=${currentPage.value}&limit=20`);
+    let url = `/api/artifacts/searchItems?page=${currentPage.value}&limit=20`;
     if (searchQuery.value.trim()) {
       url += `&q=${encodeURIComponent(searchQuery.value.trim())}`;
     }
@@ -138,15 +146,16 @@ const fetchArtifacts = async () => {
       url += `&year_end=${encodeURIComponent(Number(yearEnd.value))}`;
     }
 
-    const response = await axios.get(url);
+    const response = await http.get(url);
     if (response.data.length > 0) {
       artifacts.value = [...artifacts.value, ...response.data];
       currentPage.value++;
     } else {
       hasMore.value = false;
     }
-  } catch (error) {
-    console.error('获取钱币列表失败：', error);
+  } catch (e) {
+    console.error('获取钱币列表失败：', e);
+    error.value = '获取钱币列表失败，请稍后重试。';
   } finally {
     isLoading.value = false;
   }
@@ -154,7 +163,7 @@ const fetchArtifacts = async () => {
 
 const loadFilterOptions = async () => {
   try {
-    const response = await axios.get(apiUrl('/api/artifacts/filters'));
+    const response = await http.get('/api/artifacts/filters');
     const data = response.data || {};
     filterOptions.value = {
       dynasties: data.dynasties || [],
@@ -163,8 +172,9 @@ const loadFilterOptions = async () => {
       yearMin: data.year_min ?? null,
       yearMax: data.year_max ?? null
     };
-  } catch (error) {
-    console.error('加载筛选项失败：', error);
+  } catch (e) {
+    console.error('加载筛选项失败：', e);
+    error.value = '加载筛选项失败，请稍后重试。';
     filterOptions.value = { dynasties: [], provinces: [], grades: [], yearMin: null, yearMax: null };
   }
 };
@@ -374,6 +384,39 @@ onUnmounted(() => {
   text-align: center;
   color: var(--text-secondary);
   padding: 12px 0;
+}
+
+.loading-spinner {
+  text-align: center;
+  padding: 40px;
+  color: var(--text-secondary);
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #eee;
+  border-top-color: var(--primary-color);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto 12px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.error-banner {
+  background: #fdecea;
+  color: #b33939;
+  padding: 10px 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 @media (max-width: 760px) {

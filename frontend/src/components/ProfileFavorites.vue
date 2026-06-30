@@ -7,6 +7,11 @@
 
     <p v-if="loading" class="state-text">正在加载收藏列表...</p>
 
+    <div v-else-if="error" class="error-wrap">
+      <p>{{ error }}</p>
+      <button class="retry-btn" @click="loadFavorites">重试</button>
+    </div>
+
     <div v-else-if="favorites.length > 0" class="fav-grid">
       <router-link
         v-for="item in favorites"
@@ -31,29 +36,30 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import axios from 'axios';
+import http from '@/config/http';
 import { useAuthStore } from '@/stores/auth';
-import { apiUrl } from '@/config/api';
 
 const favorites = ref([]);
 const loading = ref(false);
+const error = ref(null);
 const authStore = useAuthStore();
 
-onMounted(async () => {
+const loadFavorites = async () => {
   if (!authStore.isAuthenticated) return;
   loading.value = true;
+  error.value = null;
   try {
-    const token = localStorage.getItem('token');
-    const response = await axios.get(apiUrl('/api/user-actions/favorite'), {
-      headers: { Authorization: token }
-    });
+    const response = await http.get('/api/user-actions/favorite');
     favorites.value = Array.isArray(response.data) ? response.data : [];
-  } catch (error) {
-    console.error('获取收藏列表失败:', error);
+  } catch (e) {
+    console.error('获取收藏列表失败:', e);
+    error.value = '获取收藏列表失败，请稍后重试。';
   } finally {
     loading.value = false;
   }
-});
+};
+
+onMounted(loadFavorites);
 </script>
 
 <style scoped>
@@ -139,6 +145,34 @@ onMounted(async () => {
 
 .empty-wrap p {
   margin: 0;
+}
+
+.error-wrap {
+  padding: 16px;
+  text-align: center;
+  color: #b33939;
+  border: 1px solid #f5c6cb;
+  border-radius: 10px;
+  background: #fdecea;
+}
+
+.error-wrap p {
+  margin: 0 0 8px;
+}
+
+.retry-btn {
+  padding: 6px 16px;
+  border: 1px solid #b33939;
+  background: #fff;
+  color: #b33939;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.retry-btn:hover {
+  background: #b33939;
+  color: #fff;
 }
 
 .empty-link {

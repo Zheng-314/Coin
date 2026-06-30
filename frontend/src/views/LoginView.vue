@@ -40,10 +40,9 @@
 
 <script setup>
 import { ref } from 'vue';
-import axios from 'axios';
+import http from '@/config/http';
 import { useAuthStore } from '@/stores/auth';
 import { useRouter } from 'vue-router';
-import { apiUrl } from '@/config/api';
 
 const username = ref('');
 const password = ref('');
@@ -56,7 +55,7 @@ const handleLogin = async () => {
   isLoading.value = true;
   errorMessage.value = '';
   try {
-    const response = await axios.post(apiUrl('/api/users/login'), {
+    const response = await http.post('/api/users/login', {
       username: username.value,
       password: password.value
     });

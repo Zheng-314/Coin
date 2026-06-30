@@ -2,8 +2,11 @@
 # 配置和常量
 # ==============================================================================
 import os
+import logging
 from pathlib import Path
 from dotenv import load_dotenv
+
+logger = logging.getLogger('config')
 
 # 加载环境变量
 load_dotenv(os.path.join(os.path.dirname(__file__), '.env'))
@@ -20,6 +23,11 @@ PROJECT_ROOT_DIR = Path(BASE_DIR).parent
 DATA_DIR = PROJECT_ROOT_DIR / "data"
 ARTIFACTS_DIR = DATA_DIR / "artifacts"
 VECTOR_STORES_DIR = DATA_DIR / "vectors_stores"
+
+# Neo4j配置
+NEO4J_URI = os.getenv("NEO4J_URI", "bolt://localhost:7687")
+NEO4J_USER = os.getenv("NEO4J_USER", "neo4j")
+NEO4J_PASSWORD = os.getenv("NEO4J_PASSWORD", "")
 
 # LLM配置
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
@@ -46,10 +54,10 @@ def get_yolo():
         try:
             from ultralytics import YOLO as _YOLO
             YOLO = _YOLO
-            print("YOLO导入成功")
+            logger.info("YOLO导入成功")
         except Exception as e:
             YOLO_IMPORT_ERROR = str(e)
-            print(f"YOLO导入失败，相关功能将不可用: {e}")
+            logger.warning(f"YOLO导入失败，相关功能将不可用: {e}")
     return YOLO
 
 # 暂时不导入YOLO，避免应用启动时的依赖问题
@@ -69,7 +77,7 @@ try:
         pass
 except ImportError as e:
     WEB_SEARCH_IMPORTS_AVAILABLE = False
-    print(f"联网搜索相关依赖未完整安装，web search 将不可用: {e}")
+    logger.warning(f"联网搜索相关依赖未完整安装，web search 将不可用: {e}")
 
 try:
     from langchain_graphrag.query.global_search import GlobalSearch
@@ -92,4 +100,4 @@ try:
 except ImportError as e:
     RAG_IMPORTS_AVAILABLE = False
     # 不要将WEB_SEARCH_IMPORTS_AVAILABLE设置为False，这样即使GraphRAG不可用，联网搜索仍然可以使用
-    print(f"GraphRAG 相关依赖未完整安装，相关功能将降级: {e}")
+    logger.warning(f"GraphRAG 相关依赖未完整安装，相关功能将降级: {e}")

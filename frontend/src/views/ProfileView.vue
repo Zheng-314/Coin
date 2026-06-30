@@ -1,5 +1,7 @@
 <template>
   <div class="profile-page">
+    <div v-if="loadError" class="error-banner">{{ loadError }} <button @click="loadError = null" style="background:none;border:none;color:inherit;cursor:pointer;font-size:1rem;">✕</button></div>
+
     <section class="profile-hero coin-panel">
       <div class="hero-content">
         <div class="avatar-circle">{{ avatarText }}</div>
@@ -72,10 +74,9 @@
 
 <script setup>
 import { computed, onMounted, ref } from 'vue';
-import axios from 'axios';
+import http from '@/config/http';
 import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
-import { apiUrl } from '@/config/api';
 
 const router = useRouter();
 const route = useRoute();
@@ -83,6 +84,7 @@ const authStore = useAuthStore();
 
 const favoritesCount = ref(0);
 const chatCount = ref(0);
+const loadError = ref(null);
 
 const displayName = computed(() => authStore.username || '游客');
 const avatarText = computed(() => (displayName.value || '游').slice(0, 1).toUpperCase());
@@ -120,16 +122,16 @@ const goAccount = () => {
 
 onMounted(async () => {
   if (!authStore.isAuthenticated) return;
-  const token = localStorage.getItem('token');
   try {
     const [favRes, chatRes] = await Promise.all([
-      axios.get(apiUrl('/api/user-actions/favorite'), { headers: { Authorization: token } }),
-      axios.get(apiUrl('/api/chat/history'), { headers: { Authorization: token } })
+      http.get('/api/user-actions/favorite'),
+      http.get('/api/chat/history')
     ]);
     favoritesCount.value = Array.isArray(favRes.data) ? favRes.data.length : 0;
     chatCount.value = Array.isArray(chatRes.data) ? chatRes.data.length : 0;
   } catch (error) {
     console.error('加载个人中心概览失败:', error);
+    loadError.value = '加载个人数据失败，请刷新页面重试。';
   }
 });
 </script>
@@ -330,6 +332,16 @@ onMounted(async () => {
 .badge-item.on {
   background: #f8edd9;
   color: #7a5414;
+}
+
+.error-banner {
+  background: #fdecea;
+  color: #b33939;
+  padding: 10px 16px;
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 @media (max-width: 960px) {

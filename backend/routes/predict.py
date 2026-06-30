@@ -8,7 +8,11 @@ import numpy as np
 import traceback
 import json
 import os
+import logging
 from flask import Blueprint, request, jsonify, make_response
+from app_new import limiter
+
+logger = logging.getLogger('routes.predict')
 from models.model_loader import (
     yolo_model1, yolo_model2, onnx_session, onnx_input_names, onnx_output_names,
     predict_model_errors, ensure_onnx_session_ready
@@ -49,13 +53,13 @@ def load_class_names():
             return names
 
         CLASS_NAMES = extract_leaf_names(data)
-        print(f"已加载 {len(CLASS_NAMES)} 个类别名称")
+        logger.info(f"已加载 {len(CLASS_NAMES)} 个类别名称")
         if CLASS_NAMES:
-            print(f"前3个类别: {CLASS_NAMES[:3]}")
+            logger.info(f"前3个类别: {CLASS_NAMES[:3]}")
     except Exception as e:
-        print(f"加载分类数据失败: {e}")
+        logger.error(f"加载分类数据失败: {e}")
         import traceback
-        traceback.print_exc()
+        logger.error("加载分类数据异常", exc_info=True)
         # 如果加载失败,使用默认的占位符
         CLASS_NAMES = [f"类别 #{i}" for i in range(26)]
 
@@ -96,18 +100,18 @@ def run_optional_yolo_pipeline(image_data):
                 if segmented is not None:
                     final_image = segmented
     except Exception as e:
-        print(f"YOLO 预处理失败，回退原图: {e}")
+        logger.error(f"YOLO 预处理失败，回退原图: {e}")
 
     return final_image
 
 @predict_bp.route('/api/predict/capabilities', methods=['GET'])
 def predict_capabilities():
     """获取预测模型能力信息"""
-    print("调用 predict_capabilities 函数")
+    logger.info("调用 predict_capabilities 函数")
     late_ok, late_err = ensure_onnx_session_ready()
     # 重新导入模型变量，确保获取最新值
     from models import onnx_session, yolo_model1, yolo_model2, onnx_input_names, onnx_output_names, predict_model_errors
-    print(f"predict_capabilities: onnx_session={onnx_session}, late_ok={late_ok}, late_err={late_err}")
+    logger.debug(f"predict_capabilities: onnx_session={onnx_session}, late_ok={late_ok}, late_err={late_err}")
     onnx_spec = importlib.util.find_spec("onnxruntime")
     yolo_spec = importlib.util.find_spec("ultralytics")
 
@@ -169,15 +173,16 @@ def test_inference():
             'message': '测试推理成功'
         })
     except Exception as e:
-        print(f"测试推理失败: {e}")
+        logger.error(f"测试推理失败: {e}")
         import traceback
-        traceback.print_exc()
+        logger.error("测试推理异常", exc_info=True)
         return jsonify({'error': str(e), 'traceback': traceback.format_exc()}), 500
 
 @predict_bp.route('/predict', methods=['POST'])
+@limiter.limit("20 per minute")  # AI推理是计算密集型，限制调用频率
 def predict():
     """执行钱币预测鉴定"""
-    print("=== 收到 /predict 请求 ===")
+    logger.info("=== 收到 /predict 请求 ===")
     late_ok, late_err = ensure_onnx_session_ready()
     # 重新导入onnx_session和predict_model_errors，确保获取最新值
     from models import onnx_session, predict_model_errors
@@ -223,21 +228,46 @@ def predict():
 
     try:
         # 解码图片
-        print("开始解码图片...")
+        logger.info("开始解码图片...")
         image1_data = cv2.imdecode(np.frombuffer(file1.read(), np.uint8), cv2.IMREAD_COLOR)
         image2_data = cv2.imdecode(np.frombuffer(file2.read(), np.uint8), cv2.IMREAD_COLOR)
 
-        print(f"图片1解码结果: {image1_data.shape if image1_data is not None else 'None'}")
-        print(f"图片2解码结果: {image2_data.shape if image2_data is not None else 'None'}")
+        logger.debug(f"图片1解码结果: {image1_data.shape if image1_data is not None else 'None'}")
+        logger.debug(f"图片2解码结果: {image2_data.shape if image2_data is not None else 'None'}")
 
         if image1_data is None or image2_data is None:
             return jsonify({'error': '上传的图片无法解析，请更换清晰图片后重试。'}), 400
 
-        # 预处理：优先走 YOLO 管线，失败则自动回退原图
-        print("开始预处理...")
+        # ========== YOLO 检测阶段：判断是否为钱币 ==========
+        logger.info("开始YOLO检测...")
+        det1 = detect_yolo(image1_data)
+        det2 = detect_yolo(image2_data)
+
+        # 两张图都检测不到硬币 → 拒识
+        yolo_detected_1 = det1 is not None and len(det1) > 0
+        yolo_detected_2 = det2 is not None and len(det2) > 0
+
+        if not yolo_detected_1 and not yolo_detected_2:
+            logger.warning("两张图片均未检测到钱币")
+            return jsonify({
+                'error': '无法识别为钱币',
+                'message': '上传的图片中未检测到钱币，请上传清晰的钱币正反面照片'
+            }), 422
+
+        # 只有一张检测到 → 提示用户
+        if not yolo_detected_1 or not yolo_detected_2:
+            missing = "第一张（正面）" if not yolo_detected_1 else "第二张（反面）"
+            logger.warning(f"仅一张图片检测到钱币: {missing}未检测到")
+            return jsonify({
+                'error': '图片不完整',
+                'message': f'{missing}图片中未检测到钱币，请确保上传的是钱币正反面照片'
+            }), 422
+
+        # ========== 预处理：YOLO裁剪 + 圆形分割 ==========
+        logger.info("开始预处理...")
         processed1 = run_optional_yolo_pipeline(image1_data)
         processed2 = run_optional_yolo_pipeline(image2_data)
-        print(f"预处理完成")
+        logger.info("预处理完成")
 
         # 多候选推理：处理后图像和原图，正常和交换顺序
         candidate_pairs = [
@@ -249,19 +279,19 @@ def predict():
 
         best = None
         for i, (pipeline_name, order_name, img_a, img_b) in enumerate(candidate_pairs):
-            print(f"尝试候选 {i+1}/4: pipeline={pipeline_name}, order={order_name}")
+            logger.info(f"尝试候选 {i+1}/4: pipeline={pipeline_name}, order={order_name}")
             probs = run_onnx_pair_inference(img_a, img_b)
             if probs is not None:
-                print(f"  probs shape: {probs.shape}")
+                logger.debug(f"  probs shape: {probs.shape}")
                 # 确保 probs 是一维数组
                 if len(probs.shape) == 2:
                     probs = probs[0]  # 取第一个批次
-                print(f"  probs after flatten: {probs.shape}")
+                logger.debug(f"  probs after flatten: {probs.shape}")
 
                 top1_idx = np.argmax(probs)
                 top1_idx = int(top1_idx.item()) if hasattr(top1_idx, 'item') else int(top1_idx)
                 top1_conf = float(probs[top1_idx].item()) if hasattr(probs[top1_idx], 'item') else float(probs[top1_idx])
-                print(f"  推理成功: top1_idx={top1_idx}, top1_conf={top1_conf:.4f}")
+                logger.info(f"  推理成功: top1_idx={top1_idx}, top1_conf={top1_conf:.4f}")
                 if best is None or top1_conf > best['top1_confidence']:
                     best = {
                         'pipeline': pipeline_name,
@@ -269,26 +299,26 @@ def predict():
                         'probs': probs,
                         'top1_confidence': top1_conf
                     }
-                    print(f"  更新最佳结果")
+                    logger.debug("  更新最佳结果")
             else:
-                print(f"  推理失败")
+                logger.warning("  推理失败")
 
         if best is None:
             return jsonify({'error': '推理失败，请检查模型配置'}), 500
 
         predictions = best['probs']
-        print(f"predictions shape: {predictions.shape}")
+        logger.debug(f"predictions shape: {predictions.shape}")
 
         # 确保 predictions 是一维数组
         if len(predictions.shape) > 1:
             predictions = predictions.flatten()
 
-        print(f"predictions shape after flatten: {predictions.shape}")
-        print(f"predictions: {predictions}")
+        logger.debug(f"predictions shape after flatten: {predictions.shape}")
+        logger.debug(f"predictions: {predictions}")
 
         # 获取排序索引并取前3个
         sorted_indices = np.argsort(predictions)[::-1][:3]
-        print(f"Top 3 indices: {sorted_indices}")
+        logger.debug(f"Top 3 indices: {sorted_indices}")
 
         # 获取类别名称列表
         result_predictions = []
@@ -327,11 +357,11 @@ def predict():
         return response
 
     except Exception as e:
-        traceback.print_exc()
+        logger.error("预测处理异常", exc_info=True)
         # 记录详细错误到日志,但只返回通用错误信息给用户
-        print(f"预测处理错误: {e}")
-        print(f"错误类型: {type(e).__name__}")
-        print(f"错误详情: {traceback.format_exc()}")
+        logger.error(f"预测处理错误: {e}")
+        logger.error(f"错误类型: {type(e).__name__}")
+        logger.error(f"错误详情: {traceback.format_exc()}")
         # 在开发模式下返回详细错误,方便调试
         import os
         if os.getenv('FLASK_DEBUG'):

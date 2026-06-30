@@ -1,5 +1,5 @@
 ﻿<script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { RouterLink, RouterView } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import { useRouter } from 'vue-router';
@@ -7,6 +7,7 @@ import { useRouter } from 'vue-router';
 const authStore = useAuthStore();
 const router = useRouter();
 const showUserMenu = ref(false);
+const menuOpen = ref(false);
 
 const userInitials = computed(() => {
   const username = authStore.user?.username || '';
@@ -29,12 +30,20 @@ const goToProfile = () => {
 };
 
 // 点击外部关闭菜单
-document.addEventListener('click', (e) => {
+const handleClickOutside = (e) => {
   const userMenu = document.querySelector('.user-menu');
   const userAvatar = document.querySelector('.user-avatar');
-  if (userMenu && !userMenu.contains(e.target) && !userAvatar.contains(e.target)) {
+  if (userMenu && !userMenu.contains(e.target) && userAvatar && !userAvatar.contains(e.target)) {
     showUserMenu.value = false;
   }
+};
+
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside);
+});
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside);
 });
 </script>
 
@@ -42,13 +51,15 @@ document.addEventListener('click', (e) => {
   <header class="top-nav">
     <div class="page-shell nav-inner">
       <RouterLink to="/" class="brand">鉴泉识珍</RouterLink>
-      <nav class="nav-links">
-        <RouterLink to="/" class="nav-item" active-class="active" exact-active-class="active">首页</RouterLink>
-        <RouterLink to="/database" class="nav-item" active-class="active" exact-active-class="active">钱币数据库</RouterLink>
-        <RouterLink to="/predict" class="nav-item" active-class="active">智能鉴别</RouterLink>
-        <RouterLink to="/valuation" class="nav-item" active-class="active">估值报告</RouterLink>
-        <RouterLink to="/kgqa" class="nav-item" active-class="active">知识问答</RouterLink>
-        <RouterLink to="/about" class="nav-item" active-class="active">关于我们</RouterLink>
+      <button class="hamburger" @click="menuOpen = !menuOpen">☰</button>
+      <nav class="nav-links" :class="{ open: menuOpen }">
+        <RouterLink to="/" class="nav-item" active-class="active" exact-active-class="active" @click="menuOpen = false">首页</RouterLink>
+        <RouterLink to="/database" class="nav-item" active-class="active" exact-active-class="active" @click="menuOpen = false">钱币数据库</RouterLink>
+        <RouterLink to="/predict" class="nav-item" active-class="active" @click="menuOpen = false">智能鉴别</RouterLink>
+        <RouterLink to="/valuation" class="nav-item" active-class="active" @click="menuOpen = false">估值报告</RouterLink>
+        <RouterLink to="/kgqa" class="nav-item" active-class="active" @click="menuOpen = false">知识问答</RouterLink>
+        <RouterLink to="/tools" class="nav-item" active-class="active" @click="menuOpen = false">工具箱</RouterLink>
+        <RouterLink to="/about" class="nav-item" active-class="active" @click="menuOpen = false">关于我们</RouterLink>
       </nav>
       <div class="user-section">
         <div v-if="authStore.isAuthenticated" class="user-dropdown">
@@ -247,6 +258,15 @@ document.addEventListener('click', (e) => {
   font-size: 0.95rem;
 }
 
+.hamburger {
+  display: none;
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 8px;
+}
+
 @media (max-width: 920px) {
   .nav-inner {
     flex-direction: column;
@@ -255,9 +275,25 @@ document.addEventListener('click', (e) => {
     padding: 10px 0;
   }
 
+  .hamburger {
+    display: block;
+  }
+
   .nav-links {
-    flex-wrap: wrap;
-    justify-content: center;
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    flex-direction: column;
+    padding: 16px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    z-index: 100;
+  }
+
+  .nav-links.open {
+    display: flex;
   }
 
   .user-section {

@@ -1,9 +1,12 @@
 # ==============================================================================
 # YOLO检测服务
 # ==============================================================================
+import logging
 import cv2
 import numpy as np
 from config import get_yolo
+
+logger = logging.getLogger('services.yolo')
 
 def detect_yolo(img, confidence_threshold=0.2):
     """
@@ -52,7 +55,7 @@ def detect_yolo(img, confidence_threshold=0.2):
         return results if results else None
 
     except Exception as e:
-        print(f"YOLO检测失败: {e}")
+        logger.error(f"YOLO检测失败: {e}")
         return None
 
 def segment_circle_from_image(image, box):
@@ -90,5 +93,5 @@ def segment_circle_from_image(image, box):
         return result
 
     except Exception as e:
-        print(f"圆形区域提取失败: {e}")
+        logger.error(f"圆形区域提取失败: {e}")
         return None

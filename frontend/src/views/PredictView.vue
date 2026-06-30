@@ -1,5 +1,6 @@
 <template>
     <div id="app-container">
+      <div v-if="toast.show" :class="['toast', toast.type]">{{ toast.message }}</div>
       <h1>钱币智能鉴定</h1>
       <p class="model-status" :class="{ ok: capability.ready, bad: !capability.ready }">
         {{ capability.ready ? '模型状态：可用' : '模型状态：未就绪' }}
@@ -13,7 +14,10 @@
               <img src="/value-face-sample.png" class="example-img" alt="价值面示例">
             </div>
           </h4>
-          <div class="upload-box" @click="fileInput1?.click()">
+          <div class="upload-box" @click="fileInput1?.click()"
+               @dragover.prevent @drop.prevent="handleDrop($event, 1)"
+               @dragenter.prevent="$event.target.closest('.upload-box')?.classList?.add('drag-over')"
+               @dragleave.prevent="$event.target.closest('.upload-box')?.classList?.remove('drag-over')">
             <input type="file" ref="fileInput1" @change="handleFileChange($event, 1)" accept="image/*">
             <img v-if="previewUrl1" :src="previewUrl1" class="preview-img" alt="预览图1">
             <div v-else class="upload-prompt">
@@ -33,7 +37,10 @@
               <img src="/portrait-face-sample.png" class="example-img" alt="图案面示例">
             </div>
           </h4>
-          <div class="upload-box" @click="fileInput2?.click()">
+          <div class="upload-box" @click="fileInput2?.click()"
+               @dragover.prevent @drop.prevent="handleDrop($event, 2)"
+               @dragenter.prevent="$event.target.closest('.upload-box')?.classList?.add('drag-over')"
+               @dragleave.prevent="$event.target.closest('.upload-box')?.classList?.remove('drag-over')">
             <input type="file" ref="fileInput2" @change="handleFileChange($event, 2)" accept="image/*">
             <img v-if="previewUrl2" :src="previewUrl2" class="preview-img" alt="预览图2">
             <div v-else class="upload-prompt">
@@ -65,6 +72,7 @@
           </ul>
           <div class="valuation-actions">
             <button class="valuation-btn" @click="goToValuation">基于本次识别去估值</button>
+            <button class="valuation-btn report-btn" @click="downloadReport">导出鉴定报告</button>
           </div>
         </div>
         <div v-else-if="error">
@@ -80,8 +88,7 @@
   <script setup>
   import { ref, onMounted } from 'vue';
   import { useRouter } from 'vue-router';
-  import axios from 'axios';
-  import { apiUrl } from '@/config/api';
+  import http from '@/config/http';
 
 // --- 状态定义 ---
 const file1 = ref(null);
@@ -96,18 +103,23 @@ const router = useRouter();
 const showValueExample = ref(false);
 const showPortraitExample = ref(false);
 
+// ========== Toast 通知 ==========
+const toast = ref({ show: false, message: '', type: 'info' });
+let toastTimer = null;
+const showToast = (message, type = 'info') => {
+  if (toastTimer) clearTimeout(toastTimer);
+  toast.value = { show: true, message, type };
+  toastTimer = setTimeout(() => { toast.value.show = false }, 3000);
+};
+
   // --- DOM 引用 ---
   // 用于在脚本中访问 <input type="file"> 元素
   const fileInput1 = ref(null);
   const fileInput2 = ref(null);
 
-  // --- 后端配置 ---
-  // 【重要】请确保这里的IP地址是您后端的正确地址
-  const backendUrl = apiUrl('/predict');
-
   const loadCapability = async () => {
     try {
-      const response = await axios.get(apiUrl('/api/predict/capabilities'));
+      const response = await http.get('/api/predict/capabilities');
       const data = response.data || {};
       capability.value.ready = !!data.ready;
       capability.value.message = Array.isArray(data.errors) ? data.errors.join('；') : '';
@@ -150,6 +162,31 @@ const showPortraitExample = ref(false);
   }
 };
 
+  const handleDrop = (event, boxNumber) => {
+    const file = event.dataTransfer.files[0];
+    if (!file) return;
+    // 复用与 handleFileChange 相同的验证逻辑
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/bmp'];
+    if (!allowedTypes.includes(file.type)) {
+      showToast('不支持的文件格式，请上传 JPG、PNG、WebP 或 BMP 图片', 'error');
+      return;
+    }
+    const maxSize = 10 * 1024 * 1024;
+    if (file.size > maxSize) {
+      showToast('图片文件过大，请上传 10MB 以内的图片', 'error');
+      return;
+    }
+    error.value = null;
+    const previewUrl = URL.createObjectURL(file);
+    if (boxNumber === 1) {
+      file1.value = file;
+      previewUrl1.value = previewUrl;
+    } else {
+      file2.value = file;
+      previewUrl2.value = previewUrl;
+    }
+  };
+
   const uploadAndPredict = async () => {
     if (!capability.value.ready) {
       error.value = capability.value.message || '模型未就绪，暂时无法推理。';
@@ -164,10 +201,8 @@ const showPortraitExample = ref(false);
     formData.append('image1', file1.value);
     formData.append('image2', file2.value);
 
-    console.log("准备发送请求到:", backendUrl);
-
     try {
-      const response = await axios.post(backendUrl, formData, {
+      const response = await http.post('/predict', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       console.log("请求成功:", response.data);
@@ -218,6 +253,33 @@ const showPortraitExample = ref(false);
   onMounted(() => {
     loadCapability();
   });
+
+  // 导出鉴定报告
+  const downloadReport = async () => {
+    if (!predictionResult.value?.predictions?.length) return;
+
+    const topPred = predictionResult.value.predictions[0];
+    try {
+      const resp = await http.post('/api/report/identify', {
+        coinName: topPred.name || `类别#${topPred.class}`,
+        confidence: (topPred.confidence || 0) * 100,
+        top3: predictionResult.value.predictions.map(p => ({
+          name: p.name || `类别#${p.class}`,
+          confidence: (p.confidence || 0) * 100
+        }))
+      }, { responseType: 'blob' });
+
+      const url = URL.createObjectURL(new Blob([resp.data]));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `鉴定报告_${topPred.name || '未知'}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('导出报告失败:', err);
+      showToast('导出报告失败，请重试', 'error');
+    }
+  };
   </script>
 
   <style scoped>
@@ -341,8 +403,14 @@ const showPortraitExample = ref(false);
   }
 
   .upload-box:hover {
-    border-color: #007bff;
-    background-color: #f0f8ff;
+    border-color: var(--primary-color);
+    background-color: #fdf5f5;
+  }
+
+  .upload-box.drag-over {
+    border-color: var(--primary-color);
+    background: #fdf5f5;
+    border-style: solid;
   }
 
   .upload-box input[type="file"] {
@@ -362,7 +430,7 @@ const showPortraitExample = ref(false);
   }
 
   button {
-    background-color: #007bff;
+    background-color: var(--primary-color);
     color: white;
     border: none;
     padding: 12px 25px;
@@ -374,7 +442,7 @@ const showPortraitExample = ref(false);
   }
 
   button:hover {
-    background-color: #0056b3;
+    background-color: var(--primary-hover);
   }
 
   button:disabled {
@@ -431,6 +499,15 @@ const showPortraitExample = ref(false);
     background-color: #7a2f2f;
   }
 
+  .report-btn {
+    background-color: #2c3e50 !important;
+    margin-left: 10px;
+  }
+
+  .report-btn:hover {
+    background-color: #1a252f !important;
+  }
+
   .loader {
     border: 4px solid #f3f3f3;
     border-radius: 50%;
@@ -444,5 +521,30 @@ const showPortraitExample = ref(false);
   @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
+  }
+
+  /* Toast 通知 */
+  .toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 12px 20px;
+    border-radius: 8px;
+    z-index: 9999;
+    animation: fadeIn 0.3s;
+  }
+  .toast.success { background: #27ae60; color: white; }
+  .toast.error { background: #e74c3c; color: white; }
+  .toast.info { background: #3498db; color: white; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* 响应式 */
+  @media (max-width: 600px) {
+    .upload-area { flex-direction: column; }
+    #app-container { padding: 20px; }
   }
   </style>

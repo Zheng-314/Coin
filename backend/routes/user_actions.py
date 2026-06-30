@@ -3,10 +3,13 @@
 # ==============================================================================
 import json
 import sqlite3
+import logging
 from datetime import datetime
 from flask import Blueprint, request, jsonify
-from utils.database import get_user_db_connection, get_item_db_connection
+from utils.database import user_db, item_db
 from utils.decorators import token_required
+
+logger = logging.getLogger('routes.user_actions')
 
 user_actions_bp = Blueprint('user_actions', __name__)
 
@@ -17,22 +20,17 @@ def add_favorite(current_user):
     pid = request.get_json().get('pid')
     username = current_user['username']
 
-    conn = None
     try:
-        conn = get_user_db_connection()
-        conn.execute(
-            "INSERT INTO favorites (username, pid, timestamp) VALUES (?, ?, ?)",
-            (username, pid, int(datetime.now().timestamp()))
-        )
-        conn.commit()
+        with user_db() as conn:
+            conn.execute(
+                "INSERT INTO favorites (username, pid, timestamp) VALUES (?, ?, ?)",
+                (username, pid, int(datetime.now().timestamp()))
+            )
         return jsonify({"message": "收藏成功"}), 201
     except sqlite3.IntegrityError:
         return jsonify({"error": "您已经收藏过该物品"}), 409
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-    finally:
-        if conn:
-            conn.close()
 
 @user_actions_bp.route('/api/user-actions/favorite', methods=['GET'])
 @token_required
@@ -40,22 +38,20 @@ def get_favorites(current_user):
     """获取收藏列表"""
     username = current_user['username']
 
-    user_conn = get_user_db_connection()
-    favorite_pids = user_conn.execute(
-        "SELECT pid FROM favorites WHERE username = ?", (username,)
-    ).fetchall()
-    user_conn.close()
+    with user_db() as user_conn:
+        favorite_pids = user_conn.execute(
+            "SELECT pid FROM favorites WHERE username = ?", (username,)
+        ).fetchall()
 
     pids = [row['pid'] for row in favorite_pids]
     favorites_details = []
     if pids:
-        item_conn = get_item_db_connection()
-        placeholders = ', '.join(['?'] * len(pids))
-        items_raw = item_conn.execute(
-            f"SELECT pid, text FROM item WHERE pid IN ({placeholders})",
-            pids
-        ).fetchall()
-        item_conn.close()
+        with item_db() as item_conn:
+            placeholders = ', '.join(['?'] * len(pids))
+            items_raw = item_conn.execute(
+                f"SELECT pid, text FROM item WHERE pid IN ({placeholders})",
+                pids
+            ).fetchall()
         for item in items_raw:
             favorites_details.append({
                 'pid': item['pid'],
@@ -73,12 +69,11 @@ def get_favorite_status(current_user):
         return jsonify({"error": "PID is required"}), 400
 
     username = current_user['username']
-    conn = get_user_db_connection()
-    item = conn.execute(
-        "SELECT pid FROM favorites WHERE username = ? AND pid = ?",
-        (username, pid)
-    ).fetchone()
-    conn.close()
+    with user_db() as conn:
+        item = conn.execute(
+            "SELECT pid FROM favorites WHERE username = ? AND pid = ?",
+            (username, pid)
+        ).fetchone()
 
     is_favorited = True if item else False
     return jsonify({"isFavorited": is_favorited})
@@ -93,20 +88,15 @@ def remove_favorite(current_user):
     if not pid:
         return jsonify({"error": "PID is required"}), 400
 
-    conn = None
     try:
-        conn = get_user_db_connection()
-        conn.execute(
-            "DELETE FROM favorites WHERE username = ? AND pid = ?",
-            (username, pid)
-        )
-        conn.commit()
+        with user_db() as conn:
+            conn.execute(
+                "DELETE FROM favorites WHERE username = ? AND pid = ?",
+                (username, pid)
+            )
         return jsonify({"message": "取消收藏成功"})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-    finally:
-        if conn:
-            conn.close()
 
 @user_actions_bp.route('/api/chat/history', methods=['GET'])
 @token_required
@@ -114,13 +104,12 @@ def get_chat_history(current_user):
     """获取聊天历史"""
     username = current_user['username']
 
-    conn = get_user_db_connection()
-    try:
+    with user_db() as conn:
         messages = conn.execute(
             "SELECT message_type, content, sources FROM chat_history WHERE username = ? ORDER BY timestamp ASC",
             (username,)
         ).fetchall()
-        
+
         history = []
         for msg in messages:
             message = {"type": msg["message_type"], "text": msg["content"]}
@@ -131,8 +120,6 @@ def get_chat_history(current_user):
                     pass
             history.append(message)
         return jsonify(history)
-    finally:
-        conn.close()
 
 @user_actions_bp.route('/api/chat/history', methods=['POST'])
 @token_required
@@ -147,17 +134,12 @@ def save_chat_message(current_user):
     if not message_type or not content:
         return jsonify({"error": "type and text are required"}), 400
 
-    conn = None
     try:
-        conn = get_user_db_connection()
-        conn.execute(
-            "INSERT INTO chat_history (username, message_type, content, sources, timestamp) VALUES (?, ?, ?, ?, ?)",
-            (username, message_type, content, json.dumps(sources) if sources else None, int(datetime.now().timestamp()))
-        )
-        conn.commit()
+        with user_db() as conn:
+            conn.execute(
+                "INSERT INTO chat_history (username, message_type, content, sources, timestamp) VALUES (?, ?, ?, ?, ?)",
+                (username, message_type, content, json.dumps(sources) if sources else None, int(datetime.now().timestamp()))
+            )
         return jsonify({"message": "消息保存成功"}), 201
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-    finally:
-        if conn:
-            conn.close()

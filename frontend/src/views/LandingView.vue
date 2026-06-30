@@ -12,7 +12,7 @@
         </div>
       </div>
       <div class="hero-side coin-panel">
-        <h3>您可以再这里做到：</h3>
+        <h3>您可以在这里做到：</h3>
         <ul>
           <li><b>智能鉴定</b><span>上传双面图片，快速识别</span></li>
           <li><b>钱币数据库</b><span>按朝代/年份/省份筛选</span></li>

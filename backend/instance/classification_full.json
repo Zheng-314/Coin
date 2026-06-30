@@ -1,0 +1,286 @@
+{
+  "guqian": {
+    "unicode": "古钱",
+    "childs": {
+      "xianqin": {
+        "unicode": "先秦",
+        "childs": {
+          "beibi": { "unicode": "贝币", "childs": {} },
+          "bubi": { "unicode": "布币", "childs": {
+            "kongshoubu": { "unicode": "空首布", "childs": {} },
+            "pingshoubu": { "unicode": "平首布", "childs": {} },
+            "sankongbu": { "unicode": "三孔布", "childs": {} }
+          }},
+          "daobi": { "unicode": "刀币", "childs": {
+            "qidadao": { "unicode": "齐大刀", "childs": {} },
+            "mingdao": { "unicode": "明刀", "childs": {} },
+            "zhidao": { "unicode": "直刀", "childs": {} }
+          }},
+          "huanqian": { "unicode": "圜钱", "childs": {} }
+        }
+      },
+      "qinhan": {
+        "unicode": "秦汉",
+        "childs": {
+          "banliang": { "unicode": "半两", "childs": {} },
+          "wuzhu": { "unicode": "五铢", "childs": {} },
+          "xinmang": { "unicode": "新莽", "childs": {
+            "liuquanshibu": { "unicode": "六泉十布", "childs": {} },
+            "huobu": { "unicode": "货布", "childs": {} }
+          }}
+        }
+      },
+      "suitang": {
+        "unicode": "隋唐五代",
+        "childs": {
+          "kaiyuantongbao": { "unicode": "开元通宝", "childs": {} },
+          "qianyuanzhongbao": { "unicode": "乾元重宝", "childs": {} }
+        }
+      },
+      "songyuan": {
+        "unicode": "宋元",
+        "childs": {
+          "songqian": { "unicode": "宋钱", "childs": {} },
+          "liaoqian": { "unicode": "辽钱", "childs": {} },
+          "jinqian": { "unicode": "金钱", "childs": {} },
+          "yuanqian": { "unicode": "元钱", "childs": {} }
+        }
+      },
+      "mingqing": {
+        "unicode": "明清",
+        "childs": {
+          "mingqian": { "unicode": "明钱", "childs": {} },
+          "qingqian": { "unicode": "清钱", "childs": {
+            "shunzhi": { "unicode": "顺治通宝", "childs": {} },
+            "kangxi": { "unicode": "康熙通宝", "childs": {} },
+            "yongzheng": { "unicode": "雍正通宝", "childs": {} },
+            "qianlong": { "unicode": "乾隆通宝", "childs": {} },
+            "jiaqing": { "unicode": "嘉庆通宝", "childs": {} },
+            "daoguang": { "unicode": "道光通宝", "childs": {} },
+            "xianfeng": { "unicode": "咸丰通宝/重宝/元宝", "childs": {} },
+            "tongzhi": { "unicode": "同治通宝", "childs": {} },
+            "guangxu": { "unicode": "光绪通宝", "childs": {} },
+            "xuantong": { "unicode": "宣统通宝", "childs": {} }
+          }}
+        }
+      }
+    }
+  },
+  "jizhiyinbi": {
+    "unicode": "机制银币",
+    "childs": {
+      "qingdaizhongyang": {
+        "unicode": "清代中央",
+        "childs": {
+          "guangxuyuanbao_zbz": { "unicode": "光绪元宝（造币总厂）", "childs": {
+            "qiqianerfen": { "unicode": "七钱二分", "childs": {} },
+            "sanqianliufen": { "unicode": "三钱六分", "childs": {} },
+            "yiqianersifen": { "unicode": "一钱四分四厘", "childs": {} }
+          }},
+          "daqingyinbi": { "unicode": "大清银币", "childs": {
+            "quxulong": { "unicode": "曲须龙", "childs": {} },
+            "changxulong": { "unicode": "长须龙", "childs": {} },
+            "duanxulong": { "unicode": "短须龙", "childs": {} }
+          }}
+        }
+      },
+      "difangshengzao": {
+        "unicode": "地方省造",
+        "childs": {
+          "guangdong": { "unicode": "广东省造", "childs": {
+            "guangxuyuanbao": { "unicode": "光绪元宝", "childs": {
+              "qiqianerfen": { "unicode": "七钱二分", "childs": {} },
+              "sanqianliufen": { "unicode": "三钱六分", "childs": {} }
+            }}
+          }},
+          "hubei": { "unicode": "湖北省造", "childs": {
+            "guangxuyuanbao": { "unicode": "光绪元宝", "childs": {
+              "qiqianerfen": { "unicode": "七钱二分", "childs": {} },
+              "sanqianliufen": { "unicode": "三钱六分", "childs": {} }
+            }}
+          }},
+          "jiangnan": { "unicode": "江南省造", "childs": {
+            "jiachen": { "unicode": "甲辰", "childs": {} },
+            "yisi": { "unicode": "乙巳", "childs": {} },
+            "wuxu": { "unicode": "戊戌", "childs": {} },
+            "renchen": { "unicode": "壬寅", "childs": {} }
+          }},
+          "beiyang": { "unicode": "北洋造", "childs": {
+            "guangxu34": { "unicode": "光绪34年", "childs": {} },
+            "guangxu26": { "unicode": "光绪26年", "childs": {} }
+          }},
+          "sichuan": { "unicode": "四川省造", "childs": {
+            "guangxuyuanbao": { "unicode": "光绪元宝", "childs": {
+              "qiqianerfen": { "unicode": "七钱二分", "childs": {} }
+            }},
+            "junzhengfu": { "unicode": "军政府", "childs": {
+              "yiyuan": { "unicode": "壹圆", "childs": {} },
+              "wujiao": { "unicode": "五角", "childs": {} }
+            }}
+          }},
+          "yunnan": { "unicode": "云南省造", "childs": {
+            "guangxuyuanbao": { "unicode": "光绪元宝", "childs": {} },
+            "fuzi": { "unicode": "富字", "childs": {} }
+          }},
+          "fengtian": { "unicode": "奉天省造", "childs": {} },
+          "jilin": { "unicode": "吉林省造", "childs": {
+            "yisi": { "unicode": "乙巳", "childs": {} },
+            "gengzi": { "unicode": "庚子", "childs": {} }
+          }},
+          "anhui": { "unicode": "安徽省造", "childs": {} },
+          "zhejiang": { "unicode": "浙江省造", "childs": {} },
+          "fujian": { "unicode": "福建省造", "childs": {} },
+          "xinjiang": { "unicode": "新疆省造", "childs": {
+            "xiangyin": { "unicode": "饷银", "childs": {} }
+          }},
+          "heilongjiang": { "unicode": "黑龙江省造", "childs": {} }
+        }
+      },
+      "minguozhongyang": {
+        "unicode": "民国中央",
+        "childs": {
+          "sunkai": { "unicode": "孙中山像开国纪念币", "childs": {
+            "shangliuxing": { "unicode": "上六星", "childs": {} },
+            "xiawuxing": { "unicode": "下五星", "childs": {} }
+          }},
+          "yuandatou": { "unicode": "袁世凯像（袁大头）", "childs": {
+            "sanbian": { "unicode": "三年", "childs": {} },
+            "babian": { "unicode": "八年", "childs": {} },
+            "jiubian": { "unicode": "九年", "childs": {} },
+            "shibian": { "unicode": "十年", "childs": {} }
+          }},
+          "chuanyang": { "unicode": "孙中山像船洋", "childs": {
+            "22nian": { "unicode": "二十二年", "childs": {} },
+            "23nian": { "unicode": "二十三年", "childs": {} }
+          }},
+          "sanniao": { "unicode": "孙中山像三鸟币", "childs": {} },
+          "longfeng": { "unicode": "龙凤银币", "childs": {} }
+        }
+      },
+      "jinianbi": {
+        "unicode": "纪念币",
+        "childs": {
+          "duanqirui": { "unicode": "段祺瑞像", "childs": {} },
+          "caokun": { "unicode": "曹锟像", "childs": {
+            "wenzhuang": { "unicode": "文装", "childs": {} },
+            "wuzhuang": { "unicode": "武装", "childs": {} }
+          }},
+          "xushichang": { "unicode": "徐世昌像", "childs": {} },
+          "zuolin": { "unicode": "张作霖像", "childs": {} },
+          "hunan": { "unicode": "湖南省宪", "childs": {} }
+        }
+      },
+      "difangminGuo": {
+        "unicode": "民国地方",
+        "childs": {
+          "sichuanjun": { "unicode": "四川军政府", "childs": {} },
+          "guizhouqiche": { "unicode": "贵州汽车币", "childs": {} },
+          "guizhouzhuzhi": { "unicode": "贵州竹枝币", "childs": {} },
+          "yunnanhuHu": { "unicode": "云南拥护共和", "childs": {} }
+        }
+      }
+    }
+  },
+  "jizhitongbi": {
+    "unicode": "机制铜币",
+    "childs": {
+      "qingmo": {
+        "unicode": "清末铜元",
+        "childs": {
+          "guangxutongyuan": { "unicode": "光绪元宝铜元", "childs": {
+            "dangshi": { "unicode": "当十", "childs": {} },
+            "dangershi": { "unicode": "当二十", "childs": {} }
+          }},
+          "daqingtongbi": { "unicode": "大清铜币", "childs": {
+            "dingwei": { "unicode": "丁未", "childs": {} },
+            "bingwu": { "unicode": "丙午", "childs": {} }
+          }}
+        }
+      },
+      "mingguo": {
+        "unicode": "民国铜元",
+        "childs": {
+          "kaiguo": { "unicode": "开国纪念铜元", "childs": {} },
+          "shuangqi": { "unicode": "双旗铜元", "childs": {} },
+          "danghui": { "unicode": "党徽铜元", "childs": {} }
+        }
+      }
+    }
+  },
+  "zhibi": {
+    "unicode": "纸币",
+    "childs": {
+      "gudai": {
+        "unicode": "古代纸币",
+        "childs": {
+          "jiaozi": { "unicode": "交子（北宋）", "childs": {} },
+          "huizi": { "unicode": "会子（南宋）", "childs": {} },
+          "zhongtong": { "unicode": "中统元宝交钞（元）", "childs": {} },
+          "daming": { "unicode": "大明通行宝钞", "childs": {} }
+        }
+      },
+      "qingdai": {
+        "unicode": "清代纸币",
+        "childs": {
+          "hubu": { "unicode": "户部官票", "childs": {} },
+          "daqing": { "unicode": "大清银行兑换券", "childs": {} }
+        }
+      },
+      "mingguo": {
+        "unicode": "民国纸币",
+        "childs": {
+          "zhongyang": { "unicode": "中央银行", "childs": {} },
+          "zhongguo": { "unicode": "中国银行", "childs": {} },
+          "jiaotong": { "unicode": "交通银行", "childs": {} },
+          "nongmin": { "unicode": "中国农民银行", "childs": {} }
+        }
+      }
+    }
+  },
+  "jinbi": {
+    "unicode": "金币",
+    "childs": {
+      "qingdai": { "unicode": "清代金币", "childs": {} },
+      "mingguo": { "unicode": "民国金币", "childs": {} },
+      "xiandai": { "unicode": "近现代金币", "childs": {
+        "xiongmao": { "unicode": "熊猫金币", "childs": {} },
+        "shengxiao": { "unicode": "生肖金币", "childs": {} }
+      }}
+    }
+  },
+  "jinianbi": {
+    "unicode": "纪念币",
+    "childs": {
+      "liutong": { "unicode": "流通纪念币", "childs": {
+        "weiren": { "unicode": "伟人系列", "childs": {} },
+        "shijieyichan": { "unicode": "世界遗产系列", "childs": {} },
+        "shengxiao": { "unicode": "生肖系列", "childs": {} }
+      }},
+      "guijinshu": { "unicode": "贵金属纪念币", "childs": {
+        "jinzhi": { "unicode": "金质", "childs": {} },
+        "yinzhi": { "unicode": "银质", "childs": {} }
+      }}
+    }
+  },
+  "huaqian": {
+    "unicode": "花钱",
+    "childs": {
+      "jiyu": { "unicode": "吉语钱", "childs": {} },
+      "shengxiao": { "unicode": "生肖钱", "childs": {} },
+      "fojiao": { "unicode": "佛教钱", "childs": {} },
+      "daojiao": { "unicode": "道教钱", "childs": {} },
+      "kailu": { "unicode": "开炉钱", "childs": {} },
+      "zhenku": { "unicode": "镇库钱", "childs": {} }
+    }
+  },
+  "waiguo": {
+    "unicode": "外国流入钱币",
+    "childs": {
+      "xibanya": { "unicode": "西班牙本洋", "childs": {} },
+      "moxige": { "unicode": "墨西哥鹰洋", "childs": {} },
+      "riben": { "unicode": "日本龙洋", "childs": {} },
+      "yingguo": { "unicode": "站洋（英国）", "childs": {} },
+      "faguo": { "unicode": "坐洋（法国）", "childs": {} }
+    }
+  }
+}

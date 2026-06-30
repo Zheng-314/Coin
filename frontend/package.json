@@ -14,17 +14,12 @@
     "@element-plus/icons-vue": "^2.3.1",
     "axios": "^1.10.0",
     "element-plus": "^2.10.4",
-    "highlight.js": "^11.11.1",
     "markdown-it": "^14.1.0",
-    "markdown-it-highlightjs": "^4.2.0",
-    "neo4j-driver": "^5.28.1",
     "pinia": "^3.0.3",
     "vis-data": "^8.0.1",
     "vis-network": "^10.0.1",
     "vue": "^3.5.17",
-    "vue-markdown-render": "^2.2.1",
-    "vue-router": "^4.5.1",
-    "vue3-markdown-it": "^1.0.10"
+    "vue-router": "^4.5.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.29.0",

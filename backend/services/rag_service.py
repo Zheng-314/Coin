@@ -2,7 +2,80 @@
 # RAG问答服务
 # ==============================================================================
 import json
+import logging
+import base64
+import os
 from utils.database import get_item_db_connection
+from services import llm as global_llm
+
+logger = logging.getLogger('services.rag')
+
+
+def analyze_image_with_qwen_vl(image_files, question=""):
+    """
+    用Qwen-VL视觉大模型直接看图分析，返回图片描述
+
+    Args:
+        image_files: 图片文件列表
+        question: 用户问题
+
+    Returns:
+        分析结果文本，失败返回None
+    """
+    api_key = os.getenv('QWEN_API_KEY')
+    api_base = os.getenv('QWEN_API_BASE', 'https://dashscope.aliyuncs.com/compatible-mode/v1')
+    model = os.getenv('QWEN_VL_MODEL', 'qwen-vl-max')
+
+    if not api_key:
+        logger.warning("QWEN_API_KEY未配置，跳过视觉分析")
+        return None
+
+    try:
+        from openai import OpenAI
+        client = OpenAI(api_key=api_key, base_url=api_base)
+
+        # 构建多模态消息
+        content = []
+        for f in image_files:
+            img_data = f.read()
+            img_b64 = base64.b64encode(img_data).decode()
+            # 根据文件名判断格式
+            fmt = 'jpeg'
+            if f.filename and f.filename.lower().endswith('.png'):
+                fmt = 'png'
+            elif f.filename and f.filename.lower().endswith('.webp'):
+                fmt = 'webp'
+            content.append({
+                "type": "image_url",
+                "image_url": {"url": f"data:image/{fmt};base64,{img_b64}"}
+            })
+
+        # 添加文字提示
+        prompt = (
+            "你是一个古钱币鉴定专家。请仔细观察这张图片，回答以下问题：\n"
+            "1. 这是不是一枚钱币？如果不是，请说明图片内容。\n"
+            "2. 如果是钱币，请识别：朝代、铸造省份、币种、面值、版别\n"
+            "3. 描述钱币的品相特征（磨损、包浆、文字清晰度等）\n"
+            "4. 如果能看到评级信息（PCGS、NGC等），请记录\n"
+        )
+        if question:
+            prompt += f"\n用户具体问题：{question}"
+
+        content.append({"type": "text", "text": prompt})
+
+        resp = client.chat.completions.create(
+            model=model,
+            messages=[{"role": "user", "content": content}],
+            max_tokens=1000
+        )
+
+        result = resp.choices[0].message.content
+        logger.info(f"Qwen-VL分析结果: {result[:200]}...")
+        return result
+
+    except Exception as e:
+        logger.error(f"Qwen-VL调用失败: {e}", exc_info=True)
+        return None
 
 def execute_local_search(question: str, local_search_chain) -> str:
     """执行本地搜索并流式传输响应。"""
@@ -24,32 +97,55 @@ def execute_global_search(question: str, global_search_engine) -> str:
         result = global_search_engine.invoke(question)
         return str(result.content)
     except Exception as e:
-        print(f"全局搜索执行失败: {str(e)}")
-        import traceback
-        traceback.print_exc()
+        logger.error(f"全局搜索执行失败: {str(e)}", exc_info=True)
         return f"全局搜索暂不可用：{str(e)}"
 
 def execute_keyword_fallback_payload(question: str):
     """
-    当 LLM/RAG 不可用时的兜底问答：
-    基于本地 item.db 做关键词检索，返回可阅读摘要和来源。
+    当 GraphRAG 不可用时的兜底问答：
+    基于本地 item.db 做关键词检索，再用 LLM 合成回答。
     """
     q = (question or "").strip()
     if not q:
         return "请输入问题。", []
 
+    tokens = extract_query_tokens(q)
+    if not tokens:
+        return "请输入有效问题。", []
+
     conn = None
     try:
         conn = get_item_db_connection()
-        # 添加 LIMIT 限制，提高性能
-        rows = conn.execute("SELECT pid, text, url FROM item LIMIT 1000").fetchall()
+        conditions = " OR ".join(["text LIKE ?" for _ in tokens[:5]])
+        params = [f"%{t}%" for t in tokens[:5]]
+        rows = conn.execute(
+            f"SELECT pid, text, url FROM item WHERE {conditions} LIMIT 20",
+            params
+        ).fetchall()
     except Exception:
         rows = []
     finally:
         if conn:
             conn.close()
 
-    tokens = extract_query_tokens(q)
+    if not rows:
+        # 数据库没搜到，用LLM直接回答
+        if global_llm is not None:
+            try:
+                from langchain_core.prompts import ChatPromptTemplate
+                prompt = ChatPromptTemplate.from_template(
+                    "你是一个古钱币知识问答助手。请直接简洁地回答用户的问题，不要问候、寒暄或说\"你好\"。\n"
+                    "如果问题与古钱币无关，也可以正常回答，但可以适当引导用户提问钱币相关问题。\n\n"
+                    "用户问题：{question}\n\n"
+                    "直接回答："
+                )
+                response = global_llm.invoke(prompt.format(question=q))
+                return response.content, [{"type": "engine", "name": "LLM"}]
+            except Exception as e:
+                logger.error(f"LLM直接回答失败: {e}")
+        return "当前离线知识库中未检索到直接相关条目。请换个关键词，或稍后启用联网/大模型能力后再试。", []
+
+    # 按命中token数量排序
     scored_rows = []
     for row in rows:
         try:
@@ -57,35 +153,23 @@ def execute_keyword_fallback_payload(question: str):
             title = (text_data.get("title") or "").strip()
             desc = (text_data.get("describe") or "").replace("\n", " ").strip()
         except Exception:
-            title = ""
-            desc = ""
-
+            title, desc = "", ""
         haystack = f"{title} {desc}".lower()
-        if not haystack:
-            continue
-
-        score = 0
+        score = sum(1 for t in tokens if t in haystack)
         if q.lower() in haystack:
             score += 5
-        for token in tokens:
-            if token in haystack:
-                score += 1
-
-        if score > 0:
-            scored_rows.append((score, row, title, desc))
+        scored_rows.append((score, row, title, desc))
 
     scored_rows.sort(key=lambda x: x[0], reverse=True)
     top_rows = scored_rows[:5]
 
-    if not top_rows:
-        return "当前离线知识库中未检索到直接相关条目。请换个关键词，或稍后启用联网/大模型能力后再试。", []
-
-    lines = ["当前为离线检索模式，已为你找到以下相关文物："]
+    # 构建来源列表
     sources = []
+    context_parts = []
     for i, (_score, row, title, desc) in enumerate(top_rows, 1):
         title = title or f"文物#{row['pid']}"
-        short_desc = desc[:120] + ("..." if len(desc) > 120 else "")
-        lines.append(f"{i}. {title}（ID: {row['pid']}）{('：' + short_desc) if short_desc else ''}")
+        short_desc = desc[:300] + ("..." if len(desc) > 300 else "")
+        context_parts.append(f"{i}. {title}：{short_desc}")
         sources.append({
             "type": "artifact",
             "title": title,
@@ -93,6 +177,34 @@ def execute_keyword_fallback_payload(question: str):
             "url": row["url"]
         })
 
+    context_text = "\n".join(context_parts)
+
+    # 用 LLM 合成回答
+    if global_llm is not None:
+        try:
+            from langchain_core.prompts import ChatPromptTemplate
+            prompt = ChatPromptTemplate.from_template(
+                "你是一个古钱币知识问答助手。根据以下检索到的文物信息，直接回答用户的问题，不要问候或寒暄。\n"
+                "如果检索到的信息不足以回答问题，请基于你的知识补充回答，但要明确区分检索结果和补充知识。\n"
+                "回答要准确、简洁、有条理。\n\n"
+                "检索来源：\n{context}\n\n"
+                "用户问题：{question}\n\n"
+                "直接回答："
+            )
+            response = global_llm.invoke(prompt.format(context=context_text, question=q))
+            answer = response.content
+            return answer, sources
+        except Exception as e:
+            logger.error(f"LLM合成回答失败，降级为列表模式: {e}")
+            # 降级为列表模式
+            pass
+
+    # LLM不可用时，返回列表
+    lines = ["当前为离线检索模式，已为你找到以下相关文物："]
+    for i, (_score, row, title, desc) in enumerate(top_rows, 1):
+        title = title or f"文物#{row['pid']}"
+        short_desc = desc[:120] + ("..." if len(desc) > 120 else "")
+        lines.append(f"{i}. {title}（ID: {row['pid']}）{('：' + short_desc) if short_desc else ''}")
     lines.append('你可以去"首页"或"详情页"查看完整信息。')
     return "\n".join(lines), sources
 
@@ -132,63 +244,35 @@ def extract_query_tokens(question: str):
     return list(set(tokens))  # 去重
 
 def execute_web_search(question: str):
-    """
-    执行联网搜索（如果可用）
-    """
-    from config import WEB_SEARCH_IMPORTS_AVAILABLE, OPENAI_API_KEY, OPENAI_API_BASE, OPENAI_CHAT_MODEL
-    from langchain_community.tools.tavily_search import TavilySearchResults
-    from langchain_core.prompts import ChatPromptTemplate
-    from langchain_core.runnables import RunnablePassthrough
-    from langchain_core.output_parsers import StrOutputParser
-    from langchain_openai import ChatOpenAI
+    """执行联网搜索（如果可用）"""
+    from config import WEB_SEARCH_IMPORTS_AVAILABLE, OPENAI_API_KEY
+    from services import llm as global_llm
 
     if not WEB_SEARCH_IMPORTS_AVAILABLE:
         return "联网搜索功能未启用。"
-
     if not OPENAI_API_KEY:
         return "未配置 OPENAI_API_KEY，无法使用联网搜索。"
 
     try:
-        # 使用环境变量中的配置
-        llm = ChatOpenAI(
-            temperature=0,
-            model_name=OPENAI_CHAT_MODEL,
-            api_key=OPENAI_API_KEY,
-            base_url=OPENAI_API_BASE
-        )
+        from langchain_community.tools.tavily_search import TavilySearchResults
+        from langchain_core.prompts import ChatPromptTemplate
 
-        # 使用LangChain的TavilySearchResults工具
         search = TavilySearchResults(max_results=3)
-
-        # 执行搜索
         search_results = search.run(question)
-        print(f"搜索结果: {search_results}")
 
-        # 构建提示
         prompt = ChatPromptTemplate.from_template(
-            """基于以下搜索结果回答问题，不要编造：
-
-搜索结果：
-{search_results}
-
-问题：{question}
-
-回答："""
+            "基于以下搜索结果回答问题，不要编造：\n\n搜索结果：\n{search_results}\n\n问题：{question}\n\n回答："
         )
+        _llm = global_llm
+        if _llm is None:
+            from config import OPENAI_API_BASE, OPENAI_CHAT_MODEL
+            from langchain_openai import ChatOpenAI
+            _llm = ChatOpenAI(temperature=0, model_name=OPENAI_CHAT_MODEL, api_key=OPENAI_API_KEY, base_url=OPENAI_API_BASE)
 
-        # 直接使用LLM处理搜索结果
-        response = llm.invoke(
-            prompt.format(
-                search_results=search_results,
-                question=question
-            )
-        )
-
+        response = _llm.invoke(prompt.format(search_results=search_results, question=question))
         return response.content
     except Exception as e:
-        print(f"联网搜索失败: {str(e)}")
-        import traceback
-        traceback.print_exc()
+        logger.error(f"联网搜索失败: {str(e)}", exc_info=True)
         return f"联网搜索失败: {str(e)}"
 
 def build_question_with_history(question: str, history):
