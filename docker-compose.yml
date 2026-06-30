@@ -1,0 +1,34 @@
+version: "3.9"
+
+services:
+  backend:
+    build: .
+    ports:
+      - "5001:5001"
+    env_file:
+      - backend/.env
+    volumes:
+      - ./backend/best1.pt:/app/backend/best1.pt
+      - ./backend/best2.pt:/app/backend/best2.pt
+      - ./backend/best_model.onnx:/app/backend/best_model.onnx
+      - ./backend/instance:/app/backend/instance
+      - ./data:/app/data
+      - ./data/images:/app/data/images
+    restart: unless-stopped
+
+  neo4j:
+    image: neo4j:5-community
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    environment:
+      - NEO4J_AUTH=neo4j/password
+      - NEO4J_PLUGINS=["apoc"]
+    volumes:
+      - neo4j_data:/data
+      - neo4j_logs:/logs
+    restart: unless-stopped
+
+volumes:
+  neo4j_data:
+  neo4j_logs:

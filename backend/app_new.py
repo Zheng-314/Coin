@@ -99,14 +99,15 @@ def index():
         }
     })
 
+# 注册所有蓝图（在模块级调用，确保 flask run / gunicorn 等部署方式也能注册路由）
+register_blueprints()
+
 if __name__ == '__main__':
     logger.info("=" * 60)
     logger.info("钱币智能鉴定系统 - 后端服务")
     logger.info("=" * 60)
     logger.info("访问地址: http://0.0.0.0:5001")
     logger.info("=" * 60)
-    # 注册路由
-    register_blueprints()
     debug_mode = os.getenv('FLASK_DEBUG', '0') == '1'
     logger.info(f"启动模式: {'DEBUG' if debug_mode else 'PRODUCTION'}")
     app.run(host="0.0.0.0", port=5001, debug=debug_mode)

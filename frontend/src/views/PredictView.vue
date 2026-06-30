@@ -205,7 +205,6 @@ const showToast = (message, type = 'info') => {
       const response = await http.post('/predict', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
-      console.log("请求成功:", response.data);
       predictionResult.value = response.data;
     } catch (err) {
       console.error("推理请求失败!", err);

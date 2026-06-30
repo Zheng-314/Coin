@@ -106,7 +106,7 @@ import { useAuthStore } from '@/stores/auth';
 import { useRouter } from 'vue-router'
 import userAvatar from '@/assets/image/people.jpg';
 import botAvatar from '@/assets/image/robot.png';
-import { apiUrl } from '@/config/api';
+import { apiUrl } from '@/config/http';
 
 const md = new MarkdownIt({ html: false });
 const authStore = useAuthStore();

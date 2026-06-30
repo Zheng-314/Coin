@@ -62,42 +62,17 @@ def get_yolo():
 
 # 暂时不导入YOLO，避免应用启动时的依赖问题
 
-# LangChain / GraphRAG 相关依赖
+# LangChain / GraphRAG 可用性检查
 RAG_IMPORTS_AVAILABLE = True
 WEB_SEARCH_IMPORTS_AVAILABLE = True
 
 try:
-    from langchain_community.tools.tavily_search import TavilySearchResults
-    from langchain_core.prompts import ChatPromptTemplate
-    from langchain_core.runnables import RunnablePassthrough
-    try:
-        from langchain_core.output_parsers import StrOutputParser
-    except ImportError:
-        # 忽略StrOutputParser导入错误，因为在rag_service.py中实际上没有使用它
-        pass
-except ImportError as e:
+    import langchain_community  # noqa: F401 — 联网搜索依赖
+except ImportError:
     WEB_SEARCH_IMPORTS_AVAILABLE = False
-    logger.warning(f"联网搜索相关依赖未完整安装，web search 将不可用: {e}")
 
 try:
-    from langchain_graphrag.query.global_search import GlobalSearch
-    from langchain_graphrag.query.global_search.community_weight_calculator import CommunityWeightCalculator
-    from langchain_graphrag.query.global_search.key_points_aggregator import (
-        KeyPointsAggregator, KeyPointsAggregatorPromptBuilder, KeyPointsContextBuilder
-    )
-    from langchain_graphrag.query.global_search.key_points_generator import (
-        CommunityReportContextBuilder, KeyPointsGenerator, KeyPointsGeneratorPromptBuilder
-    )
-    from langchain_graphrag.query.local_search import LocalSearch, LocalSearchPromptBuilder, LocalSearchRetriever
-    from langchain_graphrag.query.local_search.context_builders import ContextBuilder
-    from langchain_graphrag.query.local_search.context_selectors import ContextSelector
-    from langchain_graphrag.types.graphs.community import CommunityLevel
-    from langchain_graphrag.utils import TiktokenCounter
-    from langchain_graphrag.indexing.artifacts import IndexerArtifacts
-    # 暂时跳过Chroma导入，避免Python 3.13兼容性问题
-    # from langchain_chroma.vectorstores import Chroma as ChromaVectorStore
-    from langchain_openai import OpenAIEmbeddings, ChatOpenAI
-except ImportError as e:
+    import langchain_graphrag  # noqa: F401 — 知识图谱搜索依赖
+except ImportError:
     RAG_IMPORTS_AVAILABLE = False
-    # 不要将WEB_SEARCH_IMPORTS_AVAILABLE设置为False，这样即使GraphRAG不可用，联网搜索仍然可以使用
-    logger.warning(f"GraphRAG 相关依赖未完整安装，相关功能将降级: {e}")
+    logger.warning("GraphRAG 相关依赖未完整安装，相关功能将降级")
