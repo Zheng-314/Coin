@@ -43,3 +43,6 @@ __pycache__/
 
 # 向量存储
 vectors_stores/
+
+# 训练图片数据（体积过大，不上传 Git）
+data/images/
