@@ -51,20 +51,20 @@ class ModifiedVGG19(nn.Module):
         return x
 
 class mydata(Dataset):
-    def __init__(self, root, transform=None):
+    def __init__(self, root, img_root=None, transform=None):
         self.path = root
+        self.img_root = img_root or os.path.join(os.path.dirname(__file__), "..", "data", "images")
         self.transform = transform
         self.data = []
         with open(self.path, 'r') as f:
             for line in f:
                 img1, img2, label = line.strip().split(',')
                 self.data.append((img1, img2, label))
-        # self.label_dict = {'45': 0,'50': 1,'53': 2,'55': 3,'58': 4,'61': 5,'63': 6}
 
     def __getitem__(self, index):
         img1, img2, label = self.data[index]
-        image1 = Image.open("/media/data/workplace_wph/new/" + img1)
-        image2 = Image.open("/media/data/workplace_wph/new/" + img2)
+        image1 = Image.open(os.path.join(self.img_root, img1))
+        image2 = Image.open(os.path.join(self.img_root, img2))
         if self.transform:
             image1 = self.transform(image1)
             image2 = self.transform(image2)

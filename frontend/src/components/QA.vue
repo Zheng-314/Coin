@@ -106,11 +106,14 @@ import { useAuthStore } from '@/stores/auth';
 import { useRouter } from 'vue-router'
 import userAvatar from '@/assets/image/people.jpg';
 import botAvatar from '@/assets/image/robot.png';
-import { apiUrl } from '@/config/http';
+import { useChatStream } from '@/composables/useChatStream';
+import { useImageUpload } from '@/composables/useImageUpload';
 
 const md = new MarkdownIt({ html: false });
 const authStore = useAuthStore();
 const router = useRouter();
+const { streaming, streamAsk } = useChatStream();
+const { selectedImages, imagePreviews, uploadError, handleFiles, removeImage, clearImages } = useImageUpload(10, 10);
 
 const question = ref('');
 const messages = ref([]);
@@ -118,9 +121,6 @@ const loading = ref(false);
 const searchType = ref('global');
 const messagesContainer = ref(null);
 const fileInput = ref(null);
-const selectedImages = ref([]);
-const imagePreviews = ref([]);
-const uploadError = ref(null);
 const capabilities = ref({
   global: { available: true, reason: '' },
   local: { available: true, reason: '' },
@@ -214,34 +214,10 @@ const saveMessageToDb = async (message) => {
   }
 };
 
-// 图片处理
-const triggerFileInput = () => {
-  fileInput.value?.click();
-};
-
+const triggerFileInput = () => fileInput.value?.click();
 const handleFileSelect = (event) => {
-  const files = Array.from(event.target.files);
-  for (const file of files) {
-    if (file.size > 10 * 1024 * 1024) {
-      uploadError.value = `${file.name} 超过10MB限制`;
-      continue;
-    }
-    if (!file.type.startsWith('image/')) continue;
-
-    selectedImages.value.push(file);
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      imagePreviews.value.push(e.target.result);
-    };
-    reader.readAsDataURL(file);
-  }
-  // 清空input
+  handleFiles(Array.from(event.target.files));
   if (fileInput.value) fileInput.value.value = '';
-};
-
-const removeImage = (idx) => {
-  selectedImages.value.splice(idx, 1);
-  imagePreviews.value.splice(idx, 1);
 };
 
 const askQuestion = async () => {
@@ -250,13 +226,12 @@ const askQuestion = async () => {
   if (searchType.value === 'web' && !capabilities.value.web.available) {
     const availableType = capabilities.value.global.available ? 'global' : 'local';
     searchType.value = availableType;
-    const errorMessage = {
-      id: generateId(),
-      type: 'bot',
+    const msg = {
+      id: generateId(), type: 'bot',
       text: capabilities.value.web.reason || `联网搜索当前不可用，已自动切换为${availableType === 'global' ? '全局' : '本地'}搜索。`
     };
-    messages.value.push(errorMessage);
-    await saveMessageToDb(errorMessage);
+    messages.value.push(msg);
+    await saveMessageToDb(msg);
     return;
   }
 
@@ -264,104 +239,29 @@ const askQuestion = async () => {
   const hasImages = selectedImages.value.length > 0;
   const historyForApi = JSON.parse(JSON.stringify(messages.value));
 
-  // 添加用户消息（带图片预览）
-  const userMessage = {
-    id: generateId(),
-    type: 'user',
-    text: userQuestionText,
-    images: hasImages ? [...imagePreviews.value] : []
-  };
+  // 用户消息
+  const userMessage = { id: generateId(), type: 'user', text: userQuestionText, images: hasImages ? [...imagePreviews.value] : [] };
   messages.value.push(userMessage);
   await saveMessageToDb(userMessage);
 
   loading.value = true;
   question.value = '';
   const currentImages = [...selectedImages.value];
-  imagePreviews.value = [];
-  selectedImages.value = [];
+  clearImages();
 
-  // 插入空bot消息
+  // 空 bot 消息占位
   const botMessage = { id: generateId(), type: 'bot', text: '', sources: [] };
   messages.value.push(botMessage);
   const botIndex = messages.value.length - 1;
 
-  try {
-    const formattedHistory = historyForApi.map(msg => msg.text);
-    let response;
+  await streamAsk(
+    { question: userQuestionText, searchType: searchType.value, history: historyForApi.map(m => m.text), images: currentImages },
+    (delta) => { messages.value[botIndex].text += delta; },
+    (sources) => { messages.value[botIndex].sources = sources; }
+  );
 
-    if (hasImages) {
-      // 多模态：multipart/form-data
-      const formData = new FormData();
-      formData.append('question', userQuestionText);
-      formData.append('searchType', searchType.value);
-      formData.append('history', JSON.stringify(formattedHistory));
-      formData.append('stream', 'true');
-      for (const img of currentImages) {
-        formData.append('images', img);
-      }
-
-      const token = localStorage.getItem('token');
-      const reqHeaders = token ? { 'Authorization': `Bearer ${token}` } : {};
-      response = await fetch(apiUrl('/api/ask'), {
-        method: 'POST',
-        headers: reqHeaders,
-        body: formData
-      });
-    } else {
-      // 纯文字：JSON
-      const token = localStorage.getItem('token');
-      const reqHeaders = { 'Content-Type': 'application/json' };
-      if (token) reqHeaders['Authorization'] = `Bearer ${token}`;
-      response = await fetch(apiUrl('/api/ask'), {
-        method: 'POST',
-        headers: reqHeaders,
-        body: JSON.stringify({
-          question: userQuestionText,
-          searchType: searchType.value,
-          history: formattedHistory,
-          stream: true
-        })
-      });
-    }
-
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = '';
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split('\n');
-      buffer = lines.pop();
-
-      for (const line of lines) {
-        if (!line.startsWith('data: ')) continue;
-        try {
-          const payload = JSON.parse(line.slice(6));
-          if (payload.delta !== undefined) {
-            messages.value[botIndex].text += payload.delta;
-          } else if (payload.done) {
-            messages.value[botIndex].sources = payload.sources || [];
-          } else if (payload.error) {
-            messages.value[botIndex].text = payload.answer || '发生错误，请重试。';
-          }
-        } catch (_) { /* 忽略解析错误 */ }
-      }
-    }
-
-    await saveMessageToDb(messages.value[botIndex]);
-  } catch (error) {
-    console.error('Error:', error);
-    let errorText = '与服务器通信时出错，请稍后重试。';
-    if (error.request) errorText = '服务器无响应，请检查网络连接。';
-    messages.value[botIndex].text = errorText;
-    await saveMessageToDb(messages.value[botIndex]);
-  } finally {
-    loading.value = false;
-  }
+  await saveMessageToDb(messages.value[botIndex]);
+  loading.value = false;
 };
 
 // 自动滚动

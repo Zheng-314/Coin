@@ -1,7 +1,7 @@
 <template>
     <RouterLink :to="`/artifact/${artifact.pid}`" class="card-link">
         <div class="card">
-            <img :src="artifact.url" :alt="artifact.title" class="card-image" />
+            <img :src="artifact.url" :alt="artifact.title" class="card-image" loading="lazy" />
             <div class ="card-content">
                 <p class="card-title">{{ artifact.title }}</p>
             </div>
