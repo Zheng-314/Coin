@@ -46,6 +46,8 @@ vectors_stores/
 
 # 训练图片数据（体积过大，不上传 Git）
 data/images/
+data/raw/
+data/processed/crops/
 
 # 前端 Vite 缓存
 frontend/.vite/
@@ -58,3 +60,4 @@ backend_startup.log
 venv_py312/
 venv_py313/
 .venv1/
+.gstack/
