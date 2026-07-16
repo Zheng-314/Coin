@@ -302,8 +302,8 @@ def predict():
             'predictions': result_predictions,
             'processedImage1': f"data:image/jpeg;base64,{base64_image1}",
             'processedImage2': f"data:image/jpeg;base64,{base64_image2}",
-            'selectedPipeline': best['pipeline'],
-            'selectedOrder': best['order']
+            'selectedPipeline': best_meta.get('pipeline', ''),
+            'selectedOrder': best_meta.get('order', '')
         }))
         response.headers.add('Access-Control-Allow-Origin', '*')
         response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
