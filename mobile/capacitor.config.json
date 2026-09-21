@@ -1,0 +1,21 @@
+{
+  "appId": "com.zhengyuanxuan.jianquan",
+  "appName": "鉴泉识珍",
+  "webDir": "dist",
+  "android": {
+    "allowMixedContent": true
+  },
+  "server": {
+    "androidScheme": "http"
+  },
+  "plugins": {
+    "Camera": {
+      "presentationStyle": "fullscreen"
+    },
+    "StatusBar": {
+      "overlaysWebView": false,
+      "style": "LIGHT",
+      "backgroundColor": "#F7F4EF"
+    }
+  }
+}

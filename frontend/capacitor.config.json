@@ -1,0 +1,11 @@
+{
+  "appId": "com.zhengyuanxuan.coinapp",
+  "appName": "鉴泉识珍",
+  "webDir": "dist",
+  "android": {
+    "allowMixedContent": true
+  },
+  "server": {
+    "androidScheme": "http"
+  }
+}

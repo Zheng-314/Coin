@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">鉴泉识珍</string>
+    <string name="title_activity_main">鉴泉识珍</string>
+    <string name="package_name">com.zhengyuanxuan.jianquan</string>
+    <string name="custom_url_scheme">com.zhengyuanxuan.jianquan</string>
+</resources>
