@@ -3,7 +3,7 @@
 .venv1/
 
 # 前端依赖
-frontend/node_modules/
+node_modules/
 
 # 环境变量文件
 .env
@@ -61,3 +61,17 @@ venv_py312/
 venv_py313/
 .venv1/
 .gstack/
+
+# 安装包与工具二进制（构建产物，不入库）
+*.apk
+tools/*.exe
+
+# 前端同源伺服的构建产物（由 npm run build 生成）
+/web/
+
+# HF Space 数据构件与根 data/ 重复；instance/ 为运行时数据库
+hf-space/data/
+hf-space/backend/instance/
+
+# 误建的临时文件（bash 下 `ping > nul` 产物）
+/nul
