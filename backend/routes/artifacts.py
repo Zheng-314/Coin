@@ -183,19 +183,29 @@ def get_artifact_by_id():
 
 @artifacts_bp.route('/api/kg/graph', methods=['GET'])
 def get_kg_graph():
-    """获取知识图谱数据，优先从Neo4j读取，降级到SQLite"""
-    limit = request.args.get('limit', 320, type=int)
+    """
+    获取知识图谱数据，优先从Neo4j读取，降级到 parquet/SQLite。
 
-    # 尝试从Neo4j读取真实图谱数据
+    产品逻辑：
+    - 返回节点含 degree（用于大小映射）和 communities（用于分组配色）
+    - 返回边含 weight/rank/description（用于粗细筛选和 tooltip）
+    - 前端可通过 min_rank 参数过滤低质量边，默认显示全部
+    """
+    limit = request.args.get('limit', 80, type=int)
+    min_rank = request.args.get('min_rank', None, type=int)
+
+    # --- 路径1：从 Neo4j 读取 ---
     try:
         from config import NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD
         from neo4j import GraphDatabase
         driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
         with driver.session() as session:
+            # 按 rank 排序取最重要的边
             result = session.run(
                 """
                 MATCH (n)-[r]->(m)
                 RETURN n, r, m
+                ORDER BY r.rank DESC
                 LIMIT $limit
                 """,
                 limit=limit
@@ -204,29 +214,98 @@ def get_kg_graph():
             edges = []
             for record in result:
                 n, rel, m = record['n'], record['r'], record['m']
+
+                # rank 过滤
+                rel_rank = rel.get('rank', 0) or 0
+                if min_rank is not None and rel_rank < min_rank:
+                    continue
+
                 for node in (n, m):
                     nid = str(node.element_id)
                     if nid not in nodes_map:
                         props = dict(node)
-                        label = props.get('name') or props.get('title') or props.get('id') or nid
+                        node_label = props.get('node_label') or props.get('name') or props.get('title') or props.get('id') or nid
                         node_type = list(node.labels)[0] if node.labels else 'Entity'
+                        node_degree = props.get('degree', 1) or 1
+                        try:
+                            node_degree = int(node_degree)
+                        except (ValueError, TypeError):
+                            node_degree = 1
+
                         nodes_map[nid] = {
                             'id': nid,
-                            'label': str(label)[:40],
+                            'label': str(node_label)[:40],
                             'type': node_type,
-                            'description': props.get('description', '')
+                            'description': props.get('description', ''),
+                            'degree': node_degree,
+                            'communities': props.get('communities', '[]'),
                         }
+
+                rel_weight = rel.get('weight', 1.0) or 1.0
+                try:
+                    rel_weight = float(rel_weight)
+                except (ValueError, TypeError):
+                    rel_weight = 1.0
+
                 edges.append({
                     'from': str(n.element_id),
                     'to': str(m.element_id),
-                    'label': rel.type
+                    'label': rel.type,                          # 中文关系标签（来自 import_neo4j.py）
+                    'description': rel.get('description', ''),  # 完整描述，hover tooltip 用
+                    'weight': rel_weight,
+                    'rank': rel_rank,
                 })
         driver.close()
+        logger.info(f"Neo4j 图谱查询完成：{len(nodes_map)} 节点，{len(edges)} 边")
         return jsonify({'nodes': list(nodes_map.values()), 'edges': edges})
     except Exception as e:
-        logger.error(f"Neo4j图谱读取失败，降级到SQLite: {e}")
+        logger.warning(f"Neo4j图谱读取失败，降级到 parquet/SQLite: {e}")
 
-    # 降级：从SQLite构建简单图谱
+    # --- 路径2（降级）：从 Parquet 直接读取 ---
+    # 产品逻辑：不依赖 Neo4j，GraphRAG 的 parquet 文件本身就够用
+    try:
+        from config import ARTIFACTS_DIR
+        entities_path = ARTIFACTS_DIR / "entities.parquet"
+        relationships_path = ARTIFACTS_DIR / "relationships.parquet"
+        if entities_path.exists() and relationships_path.exists():
+            import pandas as pd
+            df_e = pd.read_parquet(entities_path)
+            df_r = pd.read_parquet(relationships_path)
+
+            nodes = []
+            for _, row in df_e.iterrows():
+                entity_name = str(row.get('title', ''))
+                degree_val = int(row.get('degree', 1)) if pd.notna(row.get('degree')) else 1
+                # 使用实体名称（title）作为节点 ID，与边的 source/target 匹配
+                nodes.append({
+                    'id': str(entity_name),
+                    'label': str(entity_name)[:40],
+                    'type': str(row.get('type', 'Entity')),
+                    'description': str(row.get('description', '')) if pd.notna(row.get('description')) else '',
+                    'degree': degree_val,
+                    'communities': str(row.get('communities', '[]')),
+                })
+
+            edges = []
+            for _, row in df_r.head(limit).iterrows():
+                rank_val = int(row.get('rank', 0)) if pd.notna(row.get('rank')) else 0
+                if min_rank is not None and rank_val < min_rank:
+                    continue
+                edges.append({
+                    'from': str(row.get('source', '')),
+                    'to': str(row.get('target', '')),
+                    'label': '关联概念',
+                    'description': str(row.get('description', '')) if pd.notna(row.get('description')) else '',
+                    'weight': float(row.get('weight', 1.0)) if pd.notna(row.get('weight')) else 1.0,
+                    'rank': rank_val,
+                })
+
+            logger.info(f"Parquet 降级读取完成：{len(nodes)} 节点，{len(edges)} 边")
+            return jsonify({'nodes': nodes, 'edges': edges})
+    except Exception as e2:
+        logger.warning(f"Parquet 降级也失败，回退到 SQLite: {e2}")
+
+    # --- 路径3（最终兜底）：SQLite ---
     with item_db() as conn:
         rows = conn.execute("SELECT pid, text FROM item LIMIT ?", (min(limit, 100),)).fetchall()
 
@@ -247,13 +326,17 @@ def get_kg_graph():
             'id': node['pid'],
             'label': title[:40],
             'type': node_type,
-            'description': dynasty
+            'description': dynasty,
+            'degree': 1
         })
         if i > 0:
             edges.append({
                 'from': rows[i - 1]['pid'],
                 'to': node['pid'],
-                'label': 'RELATED_TO'
+                'label': '相关条目',
+                'description': '',
+                'weight': 1.0,
+                'rank': 0
             })
 
     return jsonify({'nodes': formatted_nodes, 'edges': edges})
