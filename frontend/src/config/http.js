@@ -5,7 +5,8 @@ import axios from 'axios'
 import { useAuthStore } from '@/stores/auth'
 import { useRouter } from 'vue-router'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:5001'
+// ?? 而非 ||：允许空字符串 = 同源模式（部署时由后端直接伺服前端，免 CORS）
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:5001'
 
 // 创建 axios 实例
 const http = axios.create({

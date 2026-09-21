@@ -1,0 +1,28 @@
+# ==============================================================================
+# 鉴泉识珍 — Hugging Face Spaces 专用 Dockerfile
+# 与根目录 Dockerfile 的区别：模型/数据打进镜像（HF LFS 支持），监听 $PORT
+# ==============================================================================
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# 系统依赖（OpenCV）
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libgl1-mesa-glx libglib2.0-0 libsm6 libxext6 libxrender-dev git git-lfs \
+    && rm -rf /var/lib/apt/lists/*
+
+# Python 依赖（torch 使用 CPU 版以减小体积）
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt \
+    && pip install --no-cache-dir langchain-graphrag || true
+
+# 应用代码 + 模型（best1.pt best2.pt best_model.onnx 已在 backend/ 内，走 LFS 上传）
+COPY backend/ ./backend/
+COPY data/ ./data/
+
+WORKDIR /app/backend
+ENV PORT=7860
+EXPOSE 7860
+
+# 健康检查：启动失败会自动重启
+CMD ["sh", "-c", "python app_new.py"]
