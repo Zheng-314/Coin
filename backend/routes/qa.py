@@ -2,6 +2,7 @@ import json
 import logging
 
 from flask import Blueprint, Response, jsonify, request, stream_with_context
+from app_new import limiter
 
 logger = logging.getLogger('routes.qa')
 
@@ -100,7 +101,7 @@ def _identify_coin_from_images(image_files, question=""):
 
     lines = ["【图片鉴定结果（YOLO+ONNX）】"]
     for i, r in enumerate(results, 1):
-        lines.append(f"{i}. {r['name']}（置信度: {r['confidence']}%）")
+        lines.append(f"{i}. {r['name']}（置信度: {r['confidence'] * 100:.1f}%）")
 
     return results, "\n".join(lines)
 
@@ -146,6 +147,8 @@ def _resolve_answer(search_type, question, question_with_history, global_search_
 
 
 @qa_bp.route("/api/ask", methods=["POST"])
+@limiter.limit("3 per minute")
+@limiter.limit("30 per hour")
 def ask():
     from services import global_search_engine, local_search_chain
 

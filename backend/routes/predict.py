@@ -13,10 +13,7 @@ from flask import Blueprint, request, jsonify, make_response
 from app_new import limiter
 
 logger = logging.getLogger('routes.predict')
-from models.model_loader import (
-    yolo_model1, yolo_model2, onnx_session, onnx_input_names, onnx_output_names,
-    predict_model_errors, ensure_onnx_session_ready
-)
+from models import model_loader
 from services.yolo_service import detect_yolo, segment_circle_from_image
 from services.onnx_service import run_onnx_pair_inference
 from utils.helpers import encode_image_to_base64
@@ -78,7 +75,7 @@ def run_optional_yolo_pipeline(image_data):
     if image_data is None:
         return None
 
-    if yolo_model1 is None or yolo_model2 is None:
+    if model_loader.yolo_model1 is None or model_loader.yolo_model2 is None:
         return final_image
 
     try:
@@ -108,22 +105,20 @@ def run_optional_yolo_pipeline(image_data):
 def predict_capabilities():
     """获取预测模型能力信息"""
     logger.info("调用 predict_capabilities 函数")
-    late_ok, late_err = ensure_onnx_session_ready()
-    # 重新导入模型变量，确保获取最新值
-    from models import onnx_session, yolo_model1, yolo_model2, onnx_input_names, onnx_output_names, predict_model_errors
-    logger.debug(f"predict_capabilities: onnx_session={onnx_session}, late_ok={late_ok}, late_err={late_err}")
+    late_ok, late_err = model_loader.ensure_onnx_session_ready()
+    logger.debug(f"predict_capabilities: onnx_session={model_loader.onnx_session}, late_ok={late_ok}, late_err={late_err}")
     onnx_spec = importlib.util.find_spec("onnxruntime")
     yolo_spec = importlib.util.find_spec("ultralytics")
 
     return jsonify({
-        "onnx_ready": onnx_session is not None and late_ok,
-        "yolo1_ready": yolo_model1 is not None,
-        "yolo2_ready": yolo_model2 is not None,
-        "onnx_inputs": onnx_input_names,
-        "onnx_outputs": onnx_output_names,
-        "errors": predict_model_errors,
+        "onnx_ready": model_loader.onnx_session is not None and late_ok,
+        "yolo1_ready": model_loader.yolo_model1 is not None,
+        "yolo2_ready": model_loader.yolo_model2 is not None,
+        "onnx_inputs": model_loader.onnx_input_names,
+        "onnx_outputs": model_loader.onnx_output_names,
+        "errors": model_loader.predict_model_errors,
         "late_init_error": late_err,
-        "ready": onnx_session is not None and late_ok,
+        "ready": model_loader.onnx_session is not None and late_ok,
         "runtime": {
             "python_executable": sys.executable,
             "python_version": sys.version,
@@ -183,13 +178,11 @@ def test_inference():
 def predict():
     """执行钱币预测鉴定"""
     logger.info("=== 收到 /predict 请求 ===")
-    late_ok, late_err = ensure_onnx_session_ready()
-    # 重新导入onnx_session和predict_model_errors，确保获取最新值
-    from models import onnx_session, predict_model_errors
-    if onnx_session is None or not late_ok:
+    late_ok, late_err = model_loader.ensure_onnx_session_ready()
+    if model_loader.onnx_session is None or not late_ok:
         return jsonify({
             'error': '推理模型未就绪，请检查 backend/best_model.onnx 与 onnxruntime 环境。',
-            'details': predict_model_errors,
+            'details': model_loader.predict_model_errors,
             'late_init_error': late_err
         }), 503
 

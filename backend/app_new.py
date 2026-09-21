@@ -99,14 +99,17 @@ def index():
         }
     })
 
-# 注册所有蓝图（在模块级调用，确保 flask run / gunicorn 等部署方式也能注册路由）
-register_blueprints()
-
-# 初始化模型（应用启动时加载，不阻塞导入）
-from models.model_loader import init_models
-init_models()
+# 蓝图注册和模型初始化移到 main 块
+# （auth.py / predict.py 需要 from app_new import limiter，
+#  模块级注册会导致循环导入，只能在 __main__ 中安全调用）
 
 if __name__ == '__main__':
+    register_blueprints()
+
+    # 初始化模型（应用启动时加载，首次推理需要 10-30 秒）
+    from models.model_loader import init_models
+    init_models()
+
     logger.info("=" * 60)
     logger.info("钱币智能鉴定系统 - 后端服务")
     logger.info("=" * 60)
@@ -114,4 +117,6 @@ if __name__ == '__main__':
     logger.info("=" * 60)
     debug_mode = os.getenv('FLASK_DEBUG', '0') == '1'
     logger.info(f"启动模式: {'DEBUG' if debug_mode else 'PRODUCTION'}")
-    app.run(host="0.0.0.0", port=5001, debug=debug_mode)
+    # 端口支持环境变量注入（HuggingFace Spaces / Render 等平台要求监听平台分配端口）
+    port = int(os.getenv('PORT', '5001'))
+    app.run(host="0.0.0.0", port=port, debug=debug_mode)

@@ -69,8 +69,8 @@ def extract_top_k(probs, class_names, k=3):
     results = []
     for idx in sorted_indices:
         idx_int = int(idx)
-        conf = float(probs[idx_int]) * 100
+        conf = float(probs[idx_int])  # 统一返回 0-1 概率，由前端负责 ×100 显示
         name = class_names[idx_int] if idx_int < len(class_names) else f"类别#{idx_int}"
-        results.append({"name": name, "confidence": round(conf, 1)})
+        results.append({"name": name, "confidence": round(conf, 4)})
 
     return results

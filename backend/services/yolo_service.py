@@ -8,9 +8,26 @@ from config import get_yolo
 
 logger = logging.getLogger('services.yolo')
 
+def _run_yolo_model(model, img, confidence_threshold):
+    """对单个 YOLO 模型运行推理，返回检测结果列表"""
+    results = []
+    detections = model(img, conf=confidence_threshold, verbose=False)
+    for det in detections:
+        boxes = det.boxes
+        if boxes is not None:
+            for box in boxes:
+                xyxy = box.xyxy[0].cpu().numpy()
+                conf = float(box.conf[0].cpu().numpy())
+                x, y, w, h = xyxy[0], xyxy[1], xyxy[2] - xyxy[0], xyxy[3] - xyxy[1]
+                results.append([x, y, w, h, conf])
+    return results
+
+
 def detect_yolo(img, confidence_threshold=0.2):
     """
-    使用YOLO模型检测图像中的物体
+    使用YOLO模型检测图像中的物体。
+    会同时尝试 model1（正面检测）和 model2（反面检测），
+    返回置信度最高的检测结果。
 
     Args:
         img: OpenCV图像 (numpy数组)
@@ -19,40 +36,29 @@ def detect_yolo(img, confidence_threshold=0.2):
     Returns:
         results: 检测结果列表，每个元素包含 [x, y, w, h, conf]
     """
-    from models import yolo_model1, yolo_model2
+    from models import model_loader
 
-    results = []
+    all_results = []
     try:
-        # 获取YOLO类
         YOLO = get_yolo()
-        # 如果YOLO不可用，返回None
         if YOLO is None:
             return None
 
-        # 优先使用模型1
-        model = yolo_model1 if yolo_model1 is not None else yolo_model2
-        if model is None:
+        # 尝试两个模型，汇总结果
+        for model in [model_loader.yolo_model1, model_loader.yolo_model2]:
+            if model is not None:
+                try:
+                    res = _run_yolo_model(model, img, confidence_threshold)
+                    all_results.extend(res)
+                except Exception as e:
+                    logger.warning(f"YOLO 单模型检测失败: {e}")
+
+        if not all_results:
             return None
 
-        # 运行推理
-        detections = model(img, conf=confidence_threshold, verbose=False)
-
-        # 提取结果
-        for det in detections:
-            boxes = det.boxes
-            if boxes is not None:
-                for box in boxes:
-                    # 获取边界框坐标和置信度
-                    xyxy = box.xyxy[0].cpu().numpy()
-                    conf = float(box.conf[0].cpu().numpy())
-
-                    x, y, w, h = xyxy[0], xyxy[1], xyxy[2] - xyxy[0], xyxy[3] - xyxy[1]
-                    results.append([x, y, w, h, conf])
-
         # 按置信度排序
-        results.sort(key=lambda x: x[4], reverse=True)
-
-        return results if results else None
+        all_results.sort(key=lambda x: x[4], reverse=True)
+        return all_results
 
     except Exception as e:
         logger.error(f"YOLO检测失败: {e}")

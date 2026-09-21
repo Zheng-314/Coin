@@ -39,7 +39,7 @@
               <ul>
                 <li v-for="(s, i) in message.sources" :key="`${i}-${s.pid || s.name || 'src'}`">
                   <span v-if="s.type === 'identification'" class="id-result">
-                    🔍 {{ s.results?.map(r => `${r.name}(${r.confidence}%)`).join('、') }}
+                    🔍 {{ s.results?.map(r => `${r.name}(${(r.confidence * 100).toFixed(1)}%)`).join('、') }}
                   </span>
                   <a v-else-if="s.pid" :href="`/artifact/${s.pid}`" target="_blank" rel="noopener noreferrer">
                     {{ s.title || `文物 #${s.pid}` }}
@@ -103,7 +103,7 @@ import { ref, onMounted, nextTick, watch, computed } from 'vue';
 import http from '@/config/http';
 import MarkdownIt from 'markdown-it';
 import { useAuthStore } from '@/stores/auth';
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import userAvatar from '@/assets/image/people.jpg';
 import botAvatar from '@/assets/image/robot.png';
 import { useChatStream } from '@/composables/useChatStream';
@@ -112,6 +112,7 @@ import { useImageUpload } from '@/composables/useImageUpload';
 const md = new MarkdownIt({ html: false });
 const authStore = useAuthStore();
 const router = useRouter();
+const route = useRoute();
 const { streaming, streamAsk } = useChatStream();
 const { selectedImages, imagePreviews, uploadError, handleFiles, removeImage, clearImages } = useImageUpload(10, 10);
 
@@ -161,6 +162,12 @@ const loadCapabilities = async () => {
 onMounted(async () => {
   await loadCapabilities();
 
+  // 优化4：图谱 → 问答，从 URL query 参数读取预填问题
+  const prefilledQuestion = route.query.q;
+  if (prefilledQuestion) {
+    question.value = prefilledQuestion;
+  }
+
   if (authStore.isAuthenticated) {
     try {
       const response = await http.get('/api/chat/history');
@@ -194,6 +201,12 @@ onMounted(async () => {
       text: '你好！我是钱币知识问答助手，登录后可以保存聊天记录。'
     });
     loading.value = false;
+  }
+
+  // 优化4：图谱 → 问答，如果 URL 带了预填问题，自动发送
+  if (prefilledQuestion) {
+    await nextTick();
+    askQuestion();
   }
 });
 

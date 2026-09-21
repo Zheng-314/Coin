@@ -38,7 +38,7 @@
           <tr v-for="r in batchResults" :key="r.index">
             <td>{{ r.index + 1 }}</td>
             <td>{{ r.top1?.name || '-' }}</td>
-            <td>{{ r.top1 ? r.top1.confidence + '%' : '-' }}</td>
+            <td>{{ r.top1 ? (r.top1.confidence * 100).toFixed(1) + '%' : '-' }}</td>
             <td :class="{ error: r.error }">{{ r.error || '成功' }}</td>
           </tr>
         </table>

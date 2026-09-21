@@ -7,8 +7,8 @@ import logging
 import cv2  # OpenCV库，用于图像处理
 import numpy as np  # 数值计算库，处理数组数据
 from PIL import Image  # Python图像库，用于图像操作
-# 从models模块导入ONNX相关的对象
-from models import onnx_session, onnx_input_names, onnx_output_names
+# 从models模块导入，通过模块引用避免 stale import
+from models import model_loader
 
 logger = logging.getLogger('services.onnx')
 
@@ -84,12 +84,17 @@ def run_onnx_pair_inference(image1_np, image2_np):
     """
     try:
         # 检查ONNX模型是否已加载
-        if onnx_session is None:
+        if model_loader.onnx_session is None:
             raise ValueError("ONNX模型未加载")
         
         # 检查输入输出名称是否已初始化
-        if not onnx_input_names or not onnx_output_names:
-            raise ValueError(f"ONNX模型输入输出名称未初始化: inputs={onnx_input_names}, outputs={onnx_output_names}")
+        if not model_loader.onnx_input_names or not model_loader.onnx_output_names:
+            raise ValueError(f"ONNX模型输入输出名称未初始化: inputs={model_loader.onnx_input_names}, outputs={model_loader.onnx_output_names}")
+        
+        # 获取当前模型引用
+        onnx_session = model_loader.onnx_session
+        onnx_input_names = model_loader.onnx_input_names
+        onnx_output_names = model_loader.onnx_output_names
         
         # 打印调试信息：显示模型的输入输出结构
         logger.info(f"ONNX输入名称: {onnx_input_names}")
