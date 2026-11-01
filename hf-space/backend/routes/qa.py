@@ -185,6 +185,22 @@ def ask():
         elif image_context:
             logger.warning(f"分析问题: {image_context}")
 
+        # 把部位级鉴别要点并入上下文：图片问答不仅回答"是什么"，还要回答"看哪里"
+        try:
+            from services.authenticity_service import build_hint_context
+            variety_hint = None
+            if isinstance(image_identification, list) and image_identification:
+                first = image_identification[0]
+                if isinstance(first, dict) and first.get("name"):
+                    variety_hint = first["name"]
+            hint_ctx = build_hint_context(variety_hint)
+            if hint_ctx:
+                image_context = (f"{image_context}\n\n{hint_ctx}"
+                                 if image_context else hint_ctx)
+                logger.info("已并入部位级鉴别要点")
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("并入鉴别要点失败（不影响问答）: %s", exc)
+
     # 如果只有图片没有问题，自动生成问题
     if not question:
         if image_identification:
@@ -212,11 +228,13 @@ def ask():
     if image_identification:
         sources.insert(0, {"type": "identification", "results": image_identification})
 
+    modalities = ["text"] + (["image"] if image_identification else [])
+
     if stream:
         def _generate():
             for char in answer:
                 yield f"data: {json.dumps({'delta': char}, ensure_ascii=False)}\n\n"
-            yield f"data: {json.dumps({'done': True, 'sources': sources, 'searchType': search_type}, ensure_ascii=False)}\n\n"
+            yield f"data: {json.dumps({'done': True, 'sources': sources, 'searchType': search_type, 'modalities': modalities}, ensure_ascii=False)}\n\n"
 
         return Response(
             stream_with_context(_generate()),
@@ -227,7 +245,7 @@ def ask():
             }
         )
 
-    return jsonify({"answer": answer, "sources": sources, "searchType": search_type})
+    return jsonify({"answer": answer, "sources": sources, "searchType": search_type, "modalities": modalities})
 
 
 @qa_bp.route("/api/ask/capabilities", methods=["GET"])

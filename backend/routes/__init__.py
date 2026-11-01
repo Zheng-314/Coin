@@ -8,6 +8,7 @@ from .predict import predict_bp
 from .user_actions import user_actions_bp
 from .valuation import valuation_bp
 from .report import report_bp
+from .authenticity import authenticity_bp
 
 __all__ = [
     'auth_bp',
@@ -16,5 +17,6 @@ __all__ = [
     'predict_bp',
     'user_actions_bp',
     'valuation_bp',
-    'report_bp'
+    'report_bp',
+    'authenticity_bp'
 ]

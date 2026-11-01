@@ -69,7 +69,8 @@ def register_blueprints():
         predict_bp,
         user_actions_bp,
         valuation_bp,
-        report_bp
+        report_bp,
+        authenticity_bp
     )
 
     # 注册蓝图
@@ -80,6 +81,7 @@ def register_blueprints():
     app.register_blueprint(user_actions_bp)
     app.register_blueprint(valuation_bp)
     app.register_blueprint(report_bp)
+    app.register_blueprint(authenticity_bp)
 
     _blueprints_registered = True
     logger.info("已注册 %d 条路由", len(list(app.url_map.iter_rules())))

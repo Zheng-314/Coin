@@ -56,6 +56,7 @@ onUnmounted(() => {
         <RouterLink to="/" class="nav-item" active-class="active" exact-active-class="active" @click="menuOpen = false">首页</RouterLink>
         <RouterLink to="/database" class="nav-item" active-class="active" exact-active-class="active" @click="menuOpen = false">钱币数据库</RouterLink>
         <RouterLink to="/predict" class="nav-item" active-class="active" @click="menuOpen = false">智能鉴别</RouterLink>
+        <RouterLink to="/authenticity" class="nav-item" active-class="active" @click="menuOpen = false">真伪初筛</RouterLink>
         <RouterLink to="/valuation" class="nav-item" active-class="active" @click="menuOpen = false">估值报告</RouterLink>
         <RouterLink to="/kgqa" class="nav-item" active-class="active" @click="menuOpen = false">知识问答</RouterLink>
         <RouterLink to="/tools" class="nav-item" active-class="active" @click="menuOpen = false">工具箱</RouterLink>

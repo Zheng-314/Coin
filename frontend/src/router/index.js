@@ -7,6 +7,7 @@ import PredictView from '@/views/PredictView.vue'
 import AboutView from '../views/AboutView.vue'
 import LandingView from '../views/LandingView.vue'
 import ValuationView from '../views/ValuationView.vue'
+import AuthenticityView from '../views/AuthenticityView.vue'
 
 // 需要登录的路由
 const protectedRoutes = ['/profile', '/tools', '/valuation']
@@ -80,6 +81,11 @@ const routes = [
     path: '/predict',
     name: 'predict',
     component: PredictView
+  },
+  {
+    path: '/authenticity',
+    name: 'authenticity',
+    component: AuthenticityView
   },
   {
     path: '/valuation',
