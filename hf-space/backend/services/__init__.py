@@ -163,7 +163,10 @@ else:
             )
             collection_count = entities_vector_store._collection.count()
             if collection_count <= 0:
-                raise RuntimeError("local vector store is empty")
+                raise RuntimeError(
+                    "local vector store is empty; "
+                    "run `python scripts/build_vector_store.py` to build it"
+                )
 
             context_selector = ContextSelector.build_default(
                 entities_vector_store=entities_vector_store,

@@ -2,6 +2,7 @@ import json
 import logging
 
 from flask import Blueprint, Response, jsonify, request, stream_with_context
+from app_new import limiter
 
 logger = logging.getLogger('routes.qa')
 
@@ -146,6 +147,8 @@ def _resolve_answer(search_type, question, question_with_history, global_search_
 
 
 @qa_bp.route("/api/ask", methods=["POST"])
+@limiter.limit("3 per minute")
+@limiter.limit("30 per hour")
 def ask():
     from services import global_search_engine, local_search_chain
 
