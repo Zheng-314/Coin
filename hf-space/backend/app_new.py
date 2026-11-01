@@ -40,6 +40,10 @@ limiter = Limiter(
     storage_uri="memory://",
 )
 
+# 蓝图注册状态（幂等：create_app / server.py / __main__ 可能都会调用）
+_blueprints_registered = False
+
+
 # 延迟导入路由，避免启动时的导入错误
 def register_blueprints():
     """
@@ -48,9 +52,15 @@ def register_blueprints():
     该函数负责初始化路由系统，并将各个功能模块的蓝图注册到 Flask 应用中。
     包括认证、知识图谱构建、问答、预测、用户行为和估值等模块的路由。
 
+    重复调用是安全的：第二次起直接返回，避免 Flask 因重复注册而报错。
+
     Raises:
         ImportError: 当路由模块导入失败时抛出
     """
+    global _blueprints_registered
+    if _blueprints_registered:
+        return
+
     # 导入路由模块
     from routes import (
         auth_bp,
@@ -70,6 +80,22 @@ def register_blueprints():
     app.register_blueprint(user_actions_bp)
     app.register_blueprint(valuation_bp)
     app.register_blueprint(report_bp)
+
+    _blueprints_registered = True
+    logger.info("已注册 %d 条路由", len(list(app.url_map.iter_rules())))
+
+
+def create_app():
+    """构造并返回已注册全部蓝图的 Flask 应用
+
+    供测试、gunicorn 与脚本调用。
+
+    背景：蓝图原先只在 __main__ 中注册，导致 `from app_new import app` 得到的
+    是一个没有任何 /api 路由的空应用，测试全部返回 404。
+    这里把注册收敛到工厂函数中，导入后显式调用即可拿到完整应用。
+    """
+    register_blueprints()
+    return app
 
 # 健康检查端点（不限流）
 @app.route('/api/health', methods=['GET'])
@@ -104,7 +130,7 @@ def index():
 #  模块级注册会导致循环导入，只能在 __main__ 中安全调用）
 
 if __name__ == '__main__':
-    register_blueprints()
+    create_app()
 
     # 初始化模型（应用启动时加载，首次推理需要 10-30 秒）
     from models.model_loader import init_models

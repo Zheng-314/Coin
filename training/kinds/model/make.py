@@ -166,7 +166,7 @@ def data_enhance(frow):
         fs.write(f"{path1},{path2},{class1},{label1}\n")
         fs.write(f"{f1[0] + 'gs.' + f1[1]},{f2[0] + 'gs.' + f2[1]},{class1},{label1}\n")
         fs.write(f"{f1[0] + 'jy.' + f1[1]},{f2[0] + 'jy.' + f2[1]},{class1},{label1}\n")
-        fs.write(f"{f1[0] + 'gs.' + f1[1]},{f2[0] + 'jy.' + f2[1]},{class1},{label1}\n")
+        # 交叉组合（gs 正面对 jy 反面）只写一次；原实现连写两次，造成该组合样本被重复计入
         fs.write(f"{f1[0] + 'gs.' + f1[1]},{f2[0] + 'jy.' + f2[1]},{class1},{label1}\n")
     
     if class1 == 'VF':

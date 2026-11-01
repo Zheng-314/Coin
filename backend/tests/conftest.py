@@ -14,9 +14,14 @@ load_dotenv()
 
 @pytest.fixture
 def app():
-    """创建测试用 Flask 应用"""
-    from app_new import app
+    """创建测试用 Flask 应用
 
+    必须通过 create_app() 构造：app_new 的蓝图并非在模块导入时注册，
+    直接 `from app_new import app` 拿到的是没有 /api 路由的空应用。
+    """
+    from app_new import create_app
+
+    app = create_app()
     app.config["TESTING"] = True
     app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "test-secret-key")
     return app
