@@ -65,6 +65,19 @@ load_class_names()
 
 predict_bp = Blueprint('predict', __name__)
 
+
+def _infer_model_output_dim():
+    """从已加载的 ONNX 会话推断输出类别数；无法推断时返回 None"""
+    session = model_loader.onnx_session
+    if session is None:
+        return None
+    try:
+        shape = session.get_outputs()[0].shape
+        last = shape[-1] if shape else None
+        return int(last) if isinstance(last, int) else None
+    except Exception:  # noqa: BLE001
+        return None
+
 def run_optional_yolo_pipeline(image_data):
     """
     使用 YOLO + 圆形分割预处理图像。
@@ -119,6 +132,10 @@ def predict_capabilities():
         "errors": model_loader.predict_model_errors,
         "late_init_error": late_err,
         "ready": model_loader.onnx_session is not None and late_ok,
+        # 模型输出维度与分类体系类别数：两者不等时 /predict 会拒绝返回类别名
+        "model_output_dim": _infer_model_output_dim(),
+        "taxonomy_classes": len(CLASS_NAMES),
+        "class_mapping_ok": _infer_model_output_dim() in (None, len(CLASS_NAMES)),
         "runtime": {
             "python_executable": sys.executable,
             "python_version": sys.version,
@@ -274,6 +291,28 @@ def predict():
         if best_probs is None:
             return jsonify({'error': '推理失败，请检查模型配置'}), 500
 
+        # ========== 模型输出维度与分类体系一致性校验 ==========
+        # 背景：部署的 best_model.onnx 输出维度为 26，而分类体系（classification.json）
+        # 已扩展到 92 类。若直接把 26 维输出当作 92 类的索引，只会命名前 26 个类别，
+        # 且显示的类别名与模型实际预测语义无关，属于静默错误。
+        # 默认拒绝返回这种结果；确需临时演示可设 ALLOW_CLASS_MISMATCH=1。
+        model_dim = int(np.asarray(best_probs).size)
+        taxonomy_dim = len(CLASS_NAMES)
+        if model_dim != taxonomy_dim and os.getenv('ALLOW_CLASS_MISMATCH', '0') != '1':
+            logger.error(
+                "模型输出维度 %d 与分类体系类别数 %d 不一致，拒绝返回可能错误的类别名",
+                model_dim, taxonomy_dim)
+            return jsonify({
+                'error': '模型与分类体系不匹配',
+                'message': (
+                    f'部署的模型输出 {model_dim} 个类别，而分类体系为 {taxonomy_dim} 类，'
+                    '直接映射会得到错误的版别名称。请重新训练并导出与当前分类体系'
+                    '一致的模型；临时演示可设置 ALLOW_CLASS_MISMATCH=1 强制返回旧行为。'
+                ),
+                'model_output_dim': model_dim,
+                'taxonomy_classes': taxonomy_dim,
+            }), 503
+
         logger.info(f"最优候选: pipeline={best_meta['pipeline']}, order={best_meta['order']}, conf={best_conf:.4f}")
 
         # Top-3 预测
@@ -310,7 +349,6 @@ def predict():
         logger.error(f"错误类型: {type(e).__name__}")
         logger.error(f"错误详情: {traceback.format_exc()}")
         # 在开发模式下返回详细错误,方便调试
-        import os
         if os.getenv('FLASK_DEBUG'):
             return jsonify({
                 'error': f'服务器处理图像时发生错误: {str(e)}',
